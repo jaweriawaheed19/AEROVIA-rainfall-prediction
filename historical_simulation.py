@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier, XGBRegressor
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
@@ -16,9 +16,9 @@ RAIN_THRESHOLD_MM = 1.0
 PROBABILITY_THRESHOLD = 0.30
 
 
-def build_model(numeric_features, categorical_features):
+def build_preprocessor(numeric_features, categorical_features):
 
-    preprocessor = ColumnTransformer(
+    return ColumnTransformer(
         transformers=[
             (
                 "numeric",
@@ -33,6 +33,14 @@ def build_model(numeric_features, categorical_features):
                 categorical_features,
             ),
         ]
+    )
+
+
+def build_classifier(numeric_features, categorical_features):
+
+    preprocessor = build_preprocessor(
+        numeric_features,
+        categorical_features
     )
 
     classifier = XGBClassifier(
@@ -53,22 +61,49 @@ def build_model(numeric_features, categorical_features):
     ])
 
 
+def build_regressor(numeric_features, categorical_features):
+
+    preprocessor = build_preprocessor(
+        numeric_features,
+        categorical_features
+    )
+
+    regressor = XGBRegressor(
+        n_estimators=500,
+        max_depth=5,
+        learning_rate=0.03,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        reg_lambda=5,
+        objective="reg:squarederror",
+        eval_metric="rmse",
+        random_state=42,
+        n_jobs=-1,
+    )
+
+    return Pipeline([
+        ("preprocessor", preprocessor),
+        ("regressor", regressor),
+    ])
+
+
 def run_historical_simulation(selected_date):
 
     selected_date = pd.Timestamp(selected_date).normalize()
 
     df = pd.read_csv(DATA_FILE, parse_dates=["date"])
+
     df = df.sort_values(
         ["location", "date"]
     ).reset_index(drop=True)
 
     group = df.groupby("location", sort=False)
 
-    # Use the exact rainfall lag features from the final classifier.
+    # Create rainfall lag features.
     for lag in [1, 2, 3, 4, 5, 6, 7]:
         df[f"rain_lag_{lag}"] = group["rainfall_mm"].shift(lag)
 
-    # The target is rainfall on the following day.
+    # Next-day rainfall target.
     df["target_rainfall"] = group["rainfall_mm"].shift(-1)
     df["target_date"] = group["date"].shift(-1)
 
@@ -119,14 +154,14 @@ def run_historical_simulation(selected_date):
         subset=required_columns
     ).copy()
 
-    # Train only on labels whose target dates are before the
-    # selected simulation date.
+    # Training data must have target dates before
+    # the selected simulation date.
     training_data = model_data[
         model_data["target_date"] < selected_date
     ].copy()
 
-    # The prediction features must come from the day before
-    # the selected target date.
+    # Prediction features correspond to the day
+    # immediately before the selected target date.
     prediction_rows = model_data[
         model_data["target_date"] == selected_date
     ].copy()
@@ -149,19 +184,51 @@ def run_historical_simulation(selected_date):
             "Choose a later historical date."
         )
 
-    # Train the temporary model.
-    model = build_model(
+    # =====================================================
+    # TRAIN OCCURRENCE CLASSIFIER
+    # =====================================================
+
+    classifier = build_classifier(
         numeric_features,
         categorical_features
     )
 
-    model.fit(
+    classifier.fit(
         training_data[feature_columns],
         training_data["target"].astype(int),
     )
 
-    # Make predictions before accessing actual target rainfall.
-    probabilities = model.predict_proba(
+    # =====================================================
+    # TRAIN AMOUNT REGRESSOR
+    # Rainy observations only
+    # =====================================================
+
+    rainy_training_data = training_data[
+        training_data["target_rainfall"] >= RAIN_THRESHOLD_MM
+    ].copy()
+
+    if rainy_training_data.empty:
+        raise ValueError(
+            "No rainy training observations are available "
+            "before the selected simulation date."
+        )
+
+    amount_regressor = build_regressor(
+        numeric_features,
+        categorical_features
+    )
+
+    # Log transformation reduces the effect of extreme rainfall.
+    amount_regressor.fit(
+        rainy_training_data[feature_columns],
+        np.log1p(rainy_training_data["target_rainfall"]),
+    )
+
+    # =====================================================
+    # MAKE PREDICTIONS BEFORE ACCESSING ACTUAL TARGETS
+    # =====================================================
+
+    probabilities = classifier.predict_proba(
         prediction_rows[feature_columns]
     )[:, 1]
 
@@ -169,32 +236,31 @@ def run_historical_simulation(selected_date):
         probabilities >= PROBABILITY_THRESHOLD
     ).astype(int)
 
-    # Calculate the historical amount estimate using only
-    # observations strictly before the selected date.
-    available_history = df[
-        df["date"] < selected_date
-    ].copy()
-
-    available_history = available_history[
-        available_history["date"].dt.month == selected_date.month
-    ]
-
-    monthly_averages = available_history.groupby(
-        "location"
-    )["rainfall_mm"].mean()
-
-    location_averages = df[
-        df["date"] < selected_date
-    ].groupby("location")["rainfall_mm"].mean()
-
-    overall_average = (
-        df.loc[
-            df["date"] < selected_date,
-            "rainfall_mm"
-        ].mean()
+    predicted_log_amount = amount_regressor.predict(
+        prediction_rows[feature_columns]
     )
 
-    # Actual rainfall is accessed only after predictions are made.
+    predicted_amount = np.expm1(
+        predicted_log_amount
+    )
+
+    predicted_amount = np.maximum(
+        predicted_amount,
+        0
+    )
+
+    # If classifier predicts no rain, final rainfall is zero.
+    final_amount = np.where(
+        predicted_rain == 1,
+        predicted_amount,
+        0.0
+    )
+
+    # =====================================================
+    # RESULTS
+    # Actual rainfall is accessed only after predictions.
+    # =====================================================
+
     results = prediction_rows[
         [
             "location",
@@ -207,26 +273,22 @@ def run_historical_simulation(selected_date):
     ].copy()
 
     results["rain_probability"] = probabilities
+
     results["predicted_rain"] = predicted_rain
+
     results["prediction"] = np.where(
         predicted_rain == 1,
         "Rain Expected",
         "No Rain Expected",
     )
 
-    results["estimated_rainfall_mm"] = results[
-        "location"
-    ].map(monthly_averages)
+    # Keep the existing column name so the dashboard
+    # remains compatible during this integration.
+    results["estimated_rainfall_mm"] = final_amount
 
-    results["estimated_rainfall_mm"] = results[
-        "estimated_rainfall_mm"
-    ].fillna(
-        results["location"].map(location_averages)
-    ).fillna(overall_average)
-
-    results["actual_rainfall_mm"] = results[
-        "target_rainfall"
-    ]
+    results["actual_rainfall_mm"] = (
+        results["target_rainfall"]
+    )
 
     results["actual_rain"] = (
         results["actual_rainfall_mm"] >= RAIN_THRESHOLD_MM
@@ -257,7 +319,9 @@ def run_historical_simulation(selected_date):
         results["estimated_rainfall_mm"].round(3)
     )
 
-    return results.sort_values("location").reset_index(drop=True)
+    return results.sort_values(
+        "location"
+    ).reset_index(drop=True)
 
 
 if __name__ == "__main__":
@@ -284,12 +348,19 @@ if __name__ == "__main__":
 
     print("Simulation date:", args.date)
     print("Locations:", len(results))
-    print("Rain occurrence accuracy:",
-          f"{results['occurrence_correct'].mean():.4f}")
-    print("Amount MAE:",
-          f"{results['amount_absolute_error_mm'].mean():.4f} mm")
+
+    print(
+        "Rain occurrence accuracy:",
+        f"{results['occurrence_correct'].mean():.4f}"
+    )
+
+    print(
+        "Amount MAE:",
+        f"{results['amount_absolute_error_mm'].mean():.4f} mm"
+    )
 
     print("\nRESULTS")
+
     print(
         results[
             [

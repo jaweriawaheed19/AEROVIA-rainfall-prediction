@@ -1,6 +1,8 @@
 from pathlib import Path
 from datetime import date
 
+import numpy as np
+import joblib
 import pandas as pd
 import streamlit as st
 import plotly.express as px
@@ -8,7 +10,8 @@ import plotly.graph_objects as go
 import folium
 
 from streamlit_folium import st_folium
-from folium.plugins import MarkerCluster
+from folium.plugins import MarkerCluster
+
 from historical_simulation import run_historical_simulation
 
 
@@ -25,6 +28,7 @@ st.set_page_config(
 DATA_FILE = Path("data/rainfall.csv")
 FORECAST_FILE = Path("reports/rain_occurrence_forecast.csv")
 EVALUATION_FILE = Path("reports/rain_occurrence_model_evaluation.csv")
+AMOUNT_MODEL_FILE = Path("models/rain_amount_xgb.pkl")
 
 PROBABILITY_THRESHOLD = 0.30
 
@@ -50,42 +54,94 @@ def load_data():
         forecast["last_observed_date"]
     )
 
-    # Historical monthly-average rainfall estimate.
-    # Only observations available by the last observed date are used.
+    # =====================================================
+    # TRAINED RAINFALL AMOUNT MODEL
+    # =====================================================
+
     historical["rainfall_mm"] = pd.to_numeric(
         historical["rainfall_mm"], errors="coerce"
     )
 
-    cutoff_date = forecast["last_observed_date"].max()
+    amount_package = joblib.load(AMOUNT_MODEL_FILE)
+    amount_model = amount_package["model"]
+    feature_columns = amount_package["feature_columns"]
 
-    available_history = historical[
-        historical["date"] <= cutoff_date
-    ].copy()
+    amount_input_rows = []
 
-    available_history["month"] = available_history["date"].dt.month
+    for _, forecast_row in forecast.iterrows():
 
-    monthly_averages = available_history.groupby(
-        ["location", "month"]
-    )["rainfall_mm"].mean()
+        location_history = historical[
+            (historical["location"] == forecast_row["location"])
+            & (
+                historical["date"]
+                <= forecast_row["last_observed_date"]
+            )
+        ].sort_values("date")
 
-    location_averages = available_history.groupby(
-        "location"
-    )["rainfall_mm"].mean()
+        if location_history.empty:
+            raise ValueError(
+                f"No historical data found for {forecast_row['location']}."
+            )
 
-    overall_average = available_history["rainfall_mm"].mean()
+        latest = location_history.iloc[-1]
 
-    def estimate_monthly_rainfall(row):
-        month = row["forecast_date"].month
-        key = (row["location"], month)
+        # The model uses rainfall lags from the latest
+        # observation available before the forecast date.
+        rainfall_values = location_history[
+            "rainfall_mm"
+        ].tolist()
 
-        return monthly_averages.get(
-            key,
-            location_averages.get(row["location"], overall_average)
-        )
+        feature_row = {
+            "temperature_c": latest["temperature_c"],
+            "relative_humidity_percent": latest[
+                "relative_humidity_percent"
+            ],
+            "wind_speed_mps": latest["wind_speed_mps"],
+            "month": latest["date"].month,
+            "day": latest["date"].day,
+            "location": forecast_row["location"],
+            "province": forecast_row["province"],
+        }
 
-    forecast["estimated_rainfall_mm"] = forecast.apply(
-        estimate_monthly_rainfall,
-        axis=1
+        for lag in [1, 2, 3, 7]:
+            feature_row[f"rain_lag_{lag}"] = (
+                rainfall_values[-(lag + 1)]
+                if len(rainfall_values) >= lag + 1
+                else np.nan
+            )
+
+        amount_input_rows.append(feature_row)
+
+    amount_features = pd.DataFrame(
+        amount_input_rows,
+        columns=feature_columns
+    )
+
+    predicted_log_amounts = amount_model.predict(
+        amount_features
+    )
+
+    predicted_amounts = np.expm1(
+        predicted_log_amounts
+    )
+
+    predicted_amounts = np.maximum(
+        predicted_amounts,
+        0
+    )
+
+    # Classifier controls whether the predicted amount
+    # is displayed as rainfall or zero.
+    forecast["predicted_rainfall_mm"] = np.where(
+        forecast["predicted_rain"] == 1,
+        predicted_amounts,
+        0.0
+    )
+
+    # Keep the previous column name temporarily so that
+    # existing dashboard sections remain compatible.
+    forecast["estimated_rainfall_mm"] = (
+        forecast["predicted_rainfall_mm"]
     )
 
     return historical, forecast, evaluation
@@ -111,8 +167,11 @@ st.markdown(
 
 st.markdown(
     """
-    This system uses an **XGBoost classification model** to estimate
-    the probability of rainfall at 22 selected locations across Pakistan.
+    This system uses a **two-stage XGBoost machine learning system** to
+    predict next-day rainfall at 22 selected locations across Pakistan.
+
+    - **Classifier:** predicts rainfall occurrence and probability.
+    - **Regressor:** estimates rainfall amount in millimetres when rain is predicted.
     """
 )
 
@@ -274,14 +333,14 @@ prediction_col3.metric(
 )
 
 prediction_col4.metric(
-    "Historical Rainfall Estimate",
+    "Predicted Rainfall Amount",
     f"{selected_row['estimated_rainfall_mm']:.2f} mm"
 )
 
 st.caption(
-    "The rainfall amount is the historical average daily rainfall "
-    "for this location and forecast month. It is not a weather-driven "
-    "rainfall amount prediction."
+    "Rainfall amount is predicted by a trained XGBoost regression model. "
+    "The amount prediction is set to zero when the occurrence classifier "
+    "predicts no rain."
 )
 
 if probability >= PROBABILITY_THRESHOLD:
@@ -448,7 +507,7 @@ for row in map_data.itertuples():
         <b>Province:</b> {row.province}<br>
         <b>Prediction Date:</b> {row.forecast_date:%d %B %Y}<br>
         <b>Rain Probability:</b> {probability * 100:.2f}%<br>
-        <b>Historical Rainfall Estimate:</b> {row.estimated_rainfall_mm:.2f} mm<br>
+        <b>Predicted Rainfall Amount:</b> {row.estimated_rainfall_mm:.2f} mm<br>
         <b>Prediction:</b> {row.prediction}<br>
         <b>Alert:</b> {row.alert}<br>
         <b>Last Observation:</b> {row.last_observed_date:%d %B %Y}
@@ -570,7 +629,7 @@ display_forecast.columns = [
     "Province",
     "Prediction Date",
     "Rain Probability (%)",
-    "Historical Rainfall Estimate (mm)",
+    "Predicted Rainfall Amount (mm)",
     "Prediction",
     "Alert Status",
 ]
@@ -597,11 +656,12 @@ st.subheader("🧪 Historical Prediction Simulation")
 
 st.markdown(
     """
-    Test the rainfall occurrence model on a past date.
+    Test the two-stage rainfall prediction system on a past date.
 
-    A temporary XGBoost model is trained using only information
-    available before the selected date. Its predictions are then
-    compared with the actual rainfall recorded on that date.
+    Temporary XGBoost classification and regression models are trained
+    using only information available before the selected date.
+    Predictions are then compared with the actual rainfall recorded
+    on that date.
     """
 )
 
@@ -765,9 +825,11 @@ else:
                 )
 
                 st.info(
-                    "The rainfall amount is a historical location-and-month "
-                    "average estimate, not a weather-driven rainfall amount "
-                    "prediction. The occurrence model is evaluated separately."
+                    "The historical simulation uses two temporary trained "
+                    "models: a classifier for rain occurrence and a regressor "
+                    "for rainfall amount. Both models use only data available "
+                    "before the selected simulation date. Predicted amounts "
+                    "are set to zero when no rain is predicted."
                 )
 
         except Exception as error:
@@ -785,36 +847,27 @@ st.subheader("🤖 Model Performance")
 
 st.markdown(
     """
-    The model was evaluated using a chronological test dataset:
-    training target dates through 2022 and testing observations from 2023 onward.
+    Performance is reported using a **chronological holdout test**.
+    Models were trained using target dates through 2022 and evaluated
+    on later observations from 2023 onward.
     """
 )
 
-metrics = evaluation.iloc[0]
+st.markdown("#### 1. Rain Occurrence — XGBoost Classifier")
+st.caption(
+    "Predicts whether daily rainfall will be at least 1 mm. "
+    "The alert threshold used by the dashboard is 30% probability."
+)
 
+metrics = evaluation.iloc[0]
 metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
 
-metric_col1.metric(
-    "Precision",
-    f"{metrics['Precision']:.4f}"
-)
+metric_col1.metric("Precision", f"{metrics['Precision']:.4f}")
+metric_col2.metric("Recall", f"{metrics['Recall']:.4f}")
+metric_col3.metric("F1 Score", f"{metrics['F1']:.4f}")
+metric_col4.metric("PR-AUC", f"{metrics['PR_AUC']:.4f}")
 
-metric_col2.metric(
-    "Recall",
-    f"{metrics['Recall']:.4f}"
-)
-
-metric_col3.metric(
-    "F1 Score",
-    f"{metrics['F1']:.4f}"
-)
-
-metric_col4.metric(
-    "PR-AUC",
-    f"{metrics['PR_AUC']:.4f}"
-)
-
-performance_columns = [
+occurrence_performance_columns = [
     "Accuracy",
     "Balanced_Accuracy",
     "ROC_AUC",
@@ -826,31 +879,75 @@ performance_columns = [
     "F1",
 ]
 
-performance_table = evaluation[
-    performance_columns
+occurrence_performance_table = evaluation[
+    occurrence_performance_columns
 ].T.reset_index()
-
-performance_table.columns = [
+occurrence_performance_table.columns = [
     "Evaluation Metric",
     "Value"
 ]
-
-performance_table["Value"] = performance_table["Value"].round(4)
+occurrence_performance_table["Value"] = (
+    occurrence_performance_table["Value"].round(4)
+)
 
 st.dataframe(
-    performance_table,
+    occurrence_performance_table,
     width="stretch",
     hide_index=True
 )
 
+st.divider()
+st.markdown("#### 2. Rainfall Amount — XGBoost Regressor")
 st.caption(
-    "The evaluation metrics describe historical held-out test performance. "
-    "They do not guarantee future prediction accuracy."
+    "The regressor is trained on rainy-day observations (rainfall ≥ 1 mm). "
+    "These metrics evaluate amount estimates only on test days when rain actually occurred."
+)
+
+amount_metric_col1, amount_metric_col2, amount_metric_col3 = st.columns(3)
+amount_metric_col1.metric("Rainy-Day MAE", "5.73 mm")
+amount_metric_col2.metric("Rainy-Day RMSE", "12.41 mm")
+amount_metric_col3.metric("Rainy-Day R²", "0.0017")
+
+st.markdown(
+    "**Rainy-day historical-average baseline:** MAE 6.34 mm | "
+    "RMSE 12.38 mm | R² 0.0069"
+)
+st.caption(
+    "The regressor improves rainy-day MAE over the baseline, but its RMSE "
+    "and R² are slightly weaker. Rainfall amount prediction remains challenging."
+)
+
+st.divider()
+st.markdown("#### 3. Complete Two-Stage System — Overall Rainfall Amount")
+st.caption(
+    "The classifier first predicts rain/no rain. If rain is predicted, "
+    "the regressor estimates the amount; otherwise the final amount is 0 mm. "
+    "These metrics include all test days, including dry days."
+)
+
+combined_metric_col1, combined_metric_col2, combined_metric_col3 = st.columns(3)
+combined_metric_col1.metric("Overall MAE", "1.57 mm")
+combined_metric_col2.metric("Overall RMSE", "5.48 mm")
+combined_metric_col3.metric("Overall R²", "0.1229")
+
+st.markdown(
+    "**Two-stage historical-average baseline:** MAE 1.74 mm | "
+    "RMSE 5.60 mm | R² 0.0833"
+)
+st.success(
+    "On the held-out test set, the two-stage ML system has lower overall "
+    "MAE and RMSE and higher R² than the historical-average baseline."
 )
 
 st.caption(
-    "The classifier predicts rainfall occurrence (at least 1 mm), "
-    "not rainfall amount, flood occurrence, or flood severity."
+    "All values above are from the recorded test evaluation, not from the "
+    "currently displayed forecast date. Metrics describe historical held-out "
+    "performance and do not guarantee future accuracy."
+)
+
+st.caption(
+    "The classifier predicts rainfall occurrence (≥ 1 mm), not flood occurrence "
+    "or flood severity. The amount model estimates rainfall in millimetres."
 )
 
 
