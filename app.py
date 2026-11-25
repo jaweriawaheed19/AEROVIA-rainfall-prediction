@@ -45,6 +45,44 @@ def load_data():
         forecast["last_observed_date"]
     )
 
+    # Historical monthly-average rainfall estimate.
+    # Only observations available by the last observed date are used.
+    historical["rainfall_mm"] = pd.to_numeric(
+        historical["rainfall_mm"], errors="coerce"
+    )
+
+    cutoff_date = forecast["last_observed_date"].max()
+
+    available_history = historical[
+        historical["date"] <= cutoff_date
+    ].copy()
+
+    available_history["month"] = available_history["date"].dt.month
+
+    monthly_averages = available_history.groupby(
+        ["location", "month"]
+    )["rainfall_mm"].mean()
+
+    location_averages = available_history.groupby(
+        "location"
+    )["rainfall_mm"].mean()
+
+    overall_average = available_history["rainfall_mm"].mean()
+
+    def estimate_monthly_rainfall(row):
+        month = row["forecast_date"].month
+        key = (row["location"], month)
+
+        return monthly_averages.get(
+            key,
+            location_averages.get(row["location"], overall_average)
+        )
+
+    forecast["estimated_rainfall_mm"] = forecast.apply(
+        estimate_monthly_rainfall,
+        axis=1
+    )
+
     return historical, forecast, evaluation
 
 
@@ -213,7 +251,7 @@ st.caption(
     f"Prediction date: {prediction_date:%d %B %Y}"
 )
 
-prediction_col1, prediction_col2, prediction_col3 = st.columns(3)
+prediction_col1, prediction_col2, prediction_col3, prediction_col4 = st.columns(4)
 
 prediction_col1.metric(
     "Rain Probability",
@@ -228,6 +266,17 @@ prediction_col2.metric(
 prediction_col3.metric(
     "Alert Status",
     selected_row["alert"]
+)
+
+prediction_col4.metric(
+    "Historical Rainfall Estimate",
+    f"{selected_row['estimated_rainfall_mm']:.2f} mm"
+)
+
+st.caption(
+    "The rainfall amount is the historical average daily rainfall "
+    "for this location and forecast month. It is not a weather-driven "
+    "rainfall amount prediction."
 )
 
 if probability >= PROBABILITY_THRESHOLD:
@@ -394,6 +443,7 @@ for row in map_data.itertuples():
         <b>Province:</b> {row.province}<br>
         <b>Prediction Date:</b> {row.forecast_date:%d %B %Y}<br>
         <b>Rain Probability:</b> {probability * 100:.2f}%<br>
+        <b>Historical Rainfall Estimate:</b> {row.estimated_rainfall_mm:.2f} mm<br>
         <b>Prediction:</b> {row.prediction}<br>
         <b>Alert:</b> {row.alert}<br>
         <b>Last Observation:</b> {row.last_observed_date:%d %B %Y}
@@ -496,6 +546,7 @@ display_forecast = filtered_forecast[
         "province",
         "forecast_date",
         "probability_percent",
+        "estimated_rainfall_mm",
         "prediction",
         "alert",
     ]
@@ -505,11 +556,16 @@ display_forecast["forecast_date"] = (
     display_forecast["forecast_date"].dt.strftime("%Y-%m-%d")
 )
 
+display_forecast["estimated_rainfall_mm"] = (
+    display_forecast["estimated_rainfall_mm"].round(2)
+)
+
 display_forecast.columns = [
     "Location",
     "Province",
     "Prediction Date",
     "Rain Probability (%)",
+    "Historical Rainfall Estimate (mm)",
     "Prediction",
     "Alert Status",
 ]
