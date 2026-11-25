@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 from datetime import date
 
 import pandas as pd
@@ -8,7 +8,8 @@ import plotly.graph_objects as go
 import folium
 
 from streamlit_folium import st_folium
-from folium.plugins import MarkerCluster
+from folium.plugins import MarkerCluster
+from historical_simulation import run_historical_simulation
 
 
 # =========================================================
@@ -26,6 +27,10 @@ FORECAST_FILE = Path("reports/rain_occurrence_forecast.csv")
 EVALUATION_FILE = Path("reports/rain_occurrence_model_evaluation.csv")
 
 PROBABILITY_THRESHOLD = 0.30
+
+@st.cache_data(show_spinner=False)
+def cached_historical_simulation(selected_date):
+    return run_historical_simulation(selected_date)
 
 
 # =========================================================
@@ -583,6 +588,195 @@ st.dataframe(
 
 
 # =========================================================
+# =========================================================
+# HISTORICAL PREDICTION SIMULATION
+# =========================================================
+
+st.divider()
+st.subheader("🧪 Historical Prediction Simulation")
+
+st.markdown(
+    """
+    Test the rainfall occurrence model on a past date.
+
+    A temporary XGBoost model is trained using only information
+    available before the selected date. Its predictions are then
+    compared with the actual rainfall recorded on that date.
+    """
+)
+
+simulation_min_date = date(1982, 1, 1)
+simulation_max_date = latest_observation.date()
+
+if simulation_max_date < simulation_min_date:
+    st.warning("There is not enough historical data for this simulation.")
+else:
+    selected_simulation_date = st.date_input(
+        "Select Historical Simulation Date",
+        value=simulation_max_date,
+        min_value=simulation_min_date,
+        max_value=simulation_max_date,
+        key="historical_simulation_date_picker"
+    )
+
+    run_simulation = st.button(
+        "▶ Run Historical Simulation",
+        type="primary",
+        key="run_historical_simulation"
+    )
+
+    if run_simulation:
+        st.session_state["historical_simulation_result_date"] = (
+            selected_simulation_date.isoformat()
+        )
+
+    stored_simulation_date = st.session_state.get(
+        "historical_simulation_result_date"
+    )
+
+    if stored_simulation_date == selected_simulation_date.isoformat():
+        try:
+            with st.spinner(
+                "Training temporary model and evaluating predictions..."
+            ):
+                simulation_results = cached_historical_simulation(
+                    selected_simulation_date.isoformat()
+                )
+
+            if simulation_results.empty:
+                st.warning("No simulation results were returned.")
+            else:
+                actual_values = simulation_results["actual_rain"]
+                predicted_values = simulation_results["predicted_rain"]
+
+                true_positive = int(
+                    ((actual_values == 1) & (predicted_values == 1)).sum()
+                )
+                false_positive = int(
+                    ((actual_values == 0) & (predicted_values == 1)).sum()
+                )
+                false_negative = int(
+                    ((actual_values == 1) & (predicted_values == 0)).sum()
+                )
+
+                accuracy = float(
+                    simulation_results["occurrence_correct"].mean()
+                )
+
+                precision = (
+                    true_positive / (true_positive + false_positive)
+                    if (true_positive + false_positive) > 0
+                    else 0.0
+                )
+
+                recall = (
+                    true_positive / (true_positive + false_negative)
+                    if (true_positive + false_negative) > 0
+                    else 0.0
+                )
+
+                f1_score = (
+                    2 * precision * recall / (precision + recall)
+                    if (precision + recall) > 0
+                    else 0.0
+                )
+
+                amount_mae = float(
+                    simulation_results["amount_absolute_error_mm"].mean()
+                )
+
+                st.success(
+                    f"Historical simulation completed for "
+                    f"{selected_simulation_date.strftime('%d %B %Y')}."
+                )
+
+                st.markdown("#### Occurrence Prediction Performance")
+
+                metric_columns = st.columns(5)
+
+                metric_columns[0].metric(
+                    "Accuracy", f"{accuracy * 100:.1f}%"
+                )
+                metric_columns[1].metric(
+                    "Precision", f"{precision * 100:.1f}%"
+                )
+                metric_columns[2].metric(
+                    "Recall", f"{recall * 100:.1f}%"
+                )
+                metric_columns[3].metric(
+                    "F1 Score", f"{f1_score * 100:.1f}%"
+                )
+                metric_columns[4].metric(
+                    "Amount MAE", f"{amount_mae:.2f} mm"
+                )
+
+                st.markdown("#### Estimated vs Actual Rainfall")
+
+                comparison_chart = px.bar(
+                    simulation_results,
+                    x="location",
+                    y=[
+                        "estimated_rainfall_mm",
+                        "actual_rainfall_mm"
+                    ],
+                    barmode="group",
+                    title="Historical Rainfall Comparison by Location",
+                    labels={
+                        "location": "Location",
+                        "value": "Rainfall (mm)",
+                        "variable": "Rainfall Type"
+                    }
+                )
+
+                comparison_chart.update_layout(
+                    xaxis_tickangle=-45,
+                    legend_title_text="",
+                    height=500
+                )
+
+                st.plotly_chart(
+                    comparison_chart,
+                    use_container_width=True
+                )
+
+                st.markdown("#### Location-wise Simulation Results")
+
+                display_columns = [
+                    "location",
+                    "province",
+                    "rain_probability_percent",
+                    "prediction",
+                    "estimated_rainfall_mm",
+                    "actual_rainfall_mm",
+                    "occurrence_correct",
+                    "amount_absolute_error_mm"
+                ]
+
+                st.dataframe(
+                    simulation_results[display_columns],
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                st.caption(
+                    "These metrics represent one selected historical date "
+                    "across the available locations. They should not be "
+                    "interpreted as a complete independent evaluation."
+                )
+
+                st.info(
+                    "The rainfall amount is a historical location-and-month "
+                    "average estimate, not a weather-driven rainfall amount "
+                    "prediction. The occurrence model is evaluated separately."
+                )
+
+        except Exception as error:
+            st.error(f"Historical simulation could not be completed: {error}")
+            st.info(
+                "Try another historical date. Your normal next-day "
+                "prediction uses a separate saved production model."
+            )
+
 # MODEL PERFORMANCE
 # =========================================================
 
