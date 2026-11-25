@@ -2,6 +2,9 @@
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import folium
+from streamlit_folium import st_folium
+from folium.plugins import MarkerCluster
 from pathlib import Path
 
 # -------------------- CONFIGURATION --------------------
@@ -207,7 +210,13 @@ st.dataframe(
 
 # -------------------- PAKISTAN MAP --------------------
 st.divider()
-st.subheader("🗺️ Pakistan Rainfall Forecast Map")
+st.subheader("Pakistan Rainfall Forecast Map")
+
+map_day = st.selectbox(
+    "Select forecast day for map",
+    ["1", "2", "3"],
+    format_func=lambda x: f"Day {x}"
+)
 
 map_data = forecast.copy()
 
@@ -217,60 +226,119 @@ map_data["predicted_rainfall_mm"] = (
 
 map_data["forecast_day"] = map_data["forecast_day"].astype(str)
 
-map_day = st.selectbox(
-    "Select forecast day for map",
-    ["1", "2", "3"],
-    format_func=lambda x: f"Day {x}"
-)
-
 map_data = map_data[
     map_data["forecast_day"] == map_day
-]
+].copy()
 
-if selected_province != "All Provinces":
-    map_data = map_data[
-        map_data["province"] == selected_province
+map_data["latitude"] = pd.to_numeric(
+    map_data["latitude"], errors="coerce"
+)
+
+map_data["longitude"] = pd.to_numeric(
+    map_data["longitude"], errors="coerce"
+)
+
+map_data = map_data.dropna(
+    subset=["latitude", "longitude", "predicted_rainfall_mm"]
+)
+
+# Create a real interactive Leaflet map
+pakistan_map = folium.Map(
+    location=[30.3753, 69.3451],
+    zoom_start=5,
+    tiles="OpenStreetMap",
+    control_scale=True
+)
+
+marker_cluster = MarkerCluster(
+    name="Rainfall Forecast Locations",
+    show=True
+).add_to(pakistan_map)
+
+def rainfall_color(rainfall):
+    if rainfall < 1:
+        return "green"
+    elif rainfall < 2:
+        return "yellow"
+    elif rainfall < 5:
+        return "orange"
+    else:
+        return "red"
+
+# Add rainfall markers for all dataset locations
+for row in map_data.itertuples():
+    rainfall = max(0, float(row.predicted_rainfall_mm))
+    color = rainfall_color(rainfall)
+
+    popup_html = f"""
+    <div style="font-family:Arial; width:190px;">
+        <h4 style="margin-bottom:8px;">{row.location}</h4>
+        <b>Province:</b> {row.province}<br>
+        <b>Forecast Day:</b> {row.forecast_day}<br>
+        <b>Forecast Date:</b> {row.forecast_date.strftime('%d %B %Y')}<br>
+        <b>Predicted Rainfall:</b> {rainfall:.2f} mm
+    </div>
+    """
+
+    folium.CircleMarker(
+        location=[row.latitude, row.longitude],
+        radius=7 + min(rainfall, 10) * 1.2,
+        color=color,
+        weight=2,
+        fill=True,
+        fill_color=color,
+        fill_opacity=0.75,
+        tooltip=f"{row.location}: {rainfall:.2f} mm",
+        popup=folium.Popup(popup_html, max_width=250)
+    ).add_to(marker_cluster)
+
+# Fit the map around all plotted locations
+if not map_data.empty:
+    bounds = [
+        [map_data["latitude"].min(), map_data["longitude"].min()],
+        [map_data["latitude"].max(), map_data["longitude"].max()]
     ]
+    pakistan_map.fit_bounds(bounds, padding=[35, 35])
 
-fig_map = px.scatter_geo(
-    map_data,
-    lat="latitude",
-    lon="longitude",
-    color="predicted_rainfall_mm",
-    size="predicted_rainfall_mm",
-    hover_name="location",
-    hover_data={
-        "province": True,
-        "predicted_rainfall_mm": ":.2f",
-        "latitude": False,
-        "longitude": False
-    },
-    color_continuous_scale="Blues",
-    size_max=25,
-    scope="asia",
-    title=f"Rainfall Forecast — Day {map_day}"
+# Add rainfall legend
+legend_html = """
+<div style="
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 9999;
+    background: white;
+    padding: 12px 16px;
+    border: 1px solid #999;
+    border-radius: 7px;
+    font-size: 13px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+    color: #222;
+">
+    <b>Predicted Rainfall</b><br>
+    <span style="display:inline-block;width:10px;height:10px;background:green;border-radius:50%;margin-right:7px;"></span>Low: Below 1 mm<br>
+    <span style="display:inline-block;width:10px;height:10px;background:#d6b900;border-radius:50%;margin-right:7px;"></span>Moderate: 1?2 mm<br>
+    <span style="display:inline-block;width:10px;height:10px;background:orange;border-radius:50%;margin-right:7px;"></span>High: 2?5 mm<br>
+    <span style="display:inline-block;width:10px;height:10px;background:red;border-radius:50%;margin-right:7px;"></span>Very High: 5 mm or more
+</div>
+"""
+
+pakistan_map.get_root().html.add_child(
+    folium.Element(legend_html)
 )
 
-fig_map.update_geos(
-    center={"lat": 30.5, "lon": 69.3},
-    projection_scale=4,
-    showcountries=True,
-    countrycolor="black",
-    showland=True,
-    landcolor="lightgray",
-    showocean=True,
-    oceancolor="lightblue"
+st.caption(
+    f"Showing {len(map_data)} forecast locations for Day {map_day}. "
+    "Click a marker to view its rainfall prediction."
 )
 
-fig_map.update_layout(
-    height=650,
-    geo=dict(
-        lataxis_range=[23, 37],
-        lonaxis_range=[60, 78]
-    )
+st_folium(
+    pakistan_map,
+    width=None,
+    height=620,
+    use_container_width=True,
+    returned_objects=[]
 )
-
-st.plotly_chart(fig_map, width="stretch")
 
 # -------------------- ALL LOCATIONS TABLE --------------------
 st.subheader("🌧️ All Locations — Three-Day Forecast")
