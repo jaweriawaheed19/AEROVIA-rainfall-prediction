@@ -1,110 +1,231 @@
+<div align="center">
+
 # Pakistan Rainfall Prediction System
 
-A machine-learning-based rainfall prediction system for selected locations across Pakistan. The project uses historical rainfall and weather observations to predict next-day rainfall occurrence and estimate rainfall amount.
+### Machine Learning–Based Next-Day Rainfall Prediction Across Pakistan
 
-The system includes two trained XGBoost models, an interactive Streamlit dashboard, a Pakistan rainfall probability map, historical prediction simulations, and model evaluation reports.
+<p>
+  <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12">
+  <img src="https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit">
+  <img src="https://img.shields.io/badge/XGBoost-Machine%20Learning-EC6B23?style=for-the-badge" alt="XGBoost">
+  <img src="https://img.shields.io/badge/Scikit--learn-Model%20Evaluation-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white" alt="Scikit-learn">
+  <img src="https://img.shields.io/badge/Status-Academic%20Project-2E8B57?style=for-the-badge" alt="Academic Project">
+</p>
 
-## 1. Project Objectives
+<p>
+  <strong>Explore historical rainfall · Predict next-day rain · Estimate rainfall amount · Visualize location-wise results</strong>
+</p>
 
-The main objectives of this project are:
+</div>
 
-- Predict whether rainfall will occur at selected locations across Pakistan.
-- Estimate the expected rainfall amount in millimetres.
-- Display rainfall predictions through an interactive dashboard.
-- Visualize rainfall probabilities on a map of Pakistan.
-- Evaluate model performance using appropriate machine-learning metrics.
-- Test predictions against historical observations using leakage-aware simulations and backtesting.
+---
 
-## 2. Machine Learning Approach
+## Project Overview
 
-The system uses a two-stage machine-learning approach consisting of two separately trained XGBoost models.
+The **Pakistan Rainfall Prediction System** is a machine learning academic project that predicts next-day rainfall for **22 selected locations across Pakistan**.
 
-### 2.1 Rainfall Occurrence Prediction
+The system uses historical weather observations and a two-stage machine learning approach:
+
+1. An **XGBoost classifier** estimates the probability that rainfall will reach at least **1 mm** on the next day.
+2. An **XGBoost regressor** estimates the rainfall amount in millimetres. The dashboard displays an amount of **0 mm** when the occurrence classifier predicts no rain.
+
+A Streamlit dashboard presents the predictions, probability-based alerts, historical rainfall charts, a map of the selected locations, and model evaluation information.
+
+> **Important:** This is an offline, historical-data-based next-day prediction system. It is not a live weather forecasting service and does not predict floods.
+
+---
+
+## Features
+
+| Feature | Description |
+|---|---|
+| Rainfall occurrence | Predicts whether rainfall will be at least 1 mm on the next day |
+| Rainfall amount | Uses a separately trained XGBoost regression model to estimate rainfall in millimetres |
+| Location selection | Filter predictions by province and selected location |
+| Pakistan map | Displays location markers coloured by predicted rainfall probability |
+| Rain alerts | Highlights locations where predicted rain probability reaches the configured threshold |
+| Historical trends | Explore historical rainfall over 30 days, 90 days, 365 days, or the complete dataset |
+| Historical simulation | Train temporary models using only data before a selected historical date and compare predictions with actual observations |
+| Model evaluation | View classification metrics from the saved model's chronological test evaluation |
+
+---
+
+## Machine Learning Approach
+
+The project uses a **two-stage prediction pipeline**. The two outputs have different purposes and are produced by separately trained models.
+
+### Stage 1 — Rainfall occurrence classification
 
 **Algorithm:** XGBoost Classifier
 
-The occurrence model predicts whether rainfall will occur on the next day.
+The classifier estimates the probability of rainfall occurrence for the next day.
 
-- Rainfall of at least 1 mm is classified as a rainy day.
-- The model produces a probability of rainfall.
-- A probability threshold of 30% is used by the dashboard to determine rain alerts.
-- The model uses historical weather and rainfall-related features.
+- Positive class: rainfall of at least **1 mm**
+- Negative class: rainfall below **1 mm**
+- The dashboard displays the predicted probability and classification.
+- The configured rain-alert threshold is **30% probability**.
 
-The trained model is saved as:
-
-`models/rain_occurrence_xgb.pkl`
-
-The training script also generates the next-day prediction file:
-
-`reports/rain_occurrence_forecast.csv`
-
-### 2.2 Rainfall Amount Estimation
+### Stage 2 — Rainfall amount regression
 
 **Algorithm:** XGBoost Regressor
 
-The amount model estimates the expected rainfall amount in millimetres.
+A separate regression model estimates the next-day rainfall amount in millimetres. Its prediction is transformed back from the model's log-target scale.
 
-- It is trained using rainy-day observations.
-- A logarithmic transformation is applied to rainfall amounts during training.
-- Predictions are converted back into millimetres.
-- The occurrence prediction is used to gate the amount estimate.
+The classifier controls how the amount is presented:
 
-If the occurrence model predicts no rain, the estimated rainfall amount is set to zero.
+- If rain is predicted, the estimated amount is displayed.
+- If rain is not predicted, the displayed amount is set to **0 mm**.
 
-The trained model is saved as:
+This is a two-stage system: occurrence classification followed by amount estimation.
 
-`models/rain_amount_xgb.pkl`
+### Prediction workflow
 
-### 2.3 Combined Prediction
+```text
+Historical rainfall dataset
+          │
+          ▼
+Prepare latest available location-level observations
+          │
+          ├─────────────────────────────┐
+          ▼                             ▼
+ XGBoost Classifier              XGBoost Regressor
+ Rain occurrence                 Rainfall amount
+          │                             │
+          ▼                             │
+ Probability of rain                    │
+          │                             │
+          └──────────────┬──────────────┘
+                         ▼
+             Apply occurrence decision
+                         │
+             ┌───────────┴───────────┐
+             ▼                       ▼
+         Rain predicted          No rain predicted
+             │                       │
+       Show estimated             Show 0 mm
+       rainfall amount
+             │                       │
+             └───────────┬───────────┘
+                         ▼
+                Streamlit dashboard
+```
 
-The final prediction combines both models:
+---
 
-1. The occurrence model predicts the probability of rainfall.
-2. The occurrence prediction determines whether rain is expected.
-3. The amount model estimates rainfall in millimetres.
-4. If no rainfall is predicted, the final estimated amount is set to zero.
+## Model Performance
 
-This approach provides two outputs: rainfall occurrence and estimated rainfall amount.
+The dashboard reads the saved rainfall-occurrence evaluation report and displays the classification metrics.
 
-## 3. Dataset
+### Rainfall occurrence classifier
 
-The project uses a historical rainfall dataset stored locally.
+| Metric | Recorded value |
+|---|---:|
+| Accuracy | 0.8413 |
+| Balanced Accuracy | 0.7333 |
+| Precision | 0.5157 |
+| Recall | 0.5724 |
+| F1 Score | 0.5426 |
+| ROC-AUC | 0.8443 |
+| PR-AUC | 0.5665 |
+| Brier Score | 0.1000 |
+| Log Loss | 0.3269 |
 
-**Dataset file:** `data/rainfall.csv`
+The occurrence model was evaluated using a chronological split, with training target dates through 2022 and testing observations from 2023 onward.
 
-Dataset details:
+### Rainfall amount regressor
 
-| Property | Description |
+The amount model was evaluated separately. Its reported rainy-day-only test metrics were:
+
+| Metric | XGBoost regressor |
+|---|---:|
+| MAE | 5.7303 mm |
+| RMSE | 12.4136 mm |
+| R² | 0.0017 |
+
+For context, the historical baseline recorded MAE 6.3428 mm, RMSE 12.3812 mm, and R² 0.0069 on the same rainy-day-only evaluation.
+
+The amount model's results are mixed: it improves MAE over that baseline, but does not improve RMSE or R². These limitations should be considered when interpreting rainfall amount estimates.
+
+> **Evaluation note:** Classification metrics and rainfall-amount metrics describe different tasks and should not be compared directly. Historical simulation results for a single selected date are illustrative and are not a substitute for a broad independent test.
+
+---
+
+## Dataset
+
+The project uses a local historical rainfall dataset:
+
+| Dataset detail | Information |
 |---|---|
-| Total records | 365,574 |
-| Locations | 22 selected locations |
-| Columns | 14 |
-| Historical start date | 1 January 1981 |
-| Historical end date | 30 June 2026 |
-| Data format | CSV |
+| File | `data/rainfall.csv` |
+| Source | NASA POWER historical observations |
+| Date coverage | 1 January 1981 – 30 June 2026 |
+| Selected locations | 22 |
+| Records | 365,574 |
+| Format | CSV |
 
-The dataset contains historical rainfall and weather observations used for feature generation, model training, evaluation, and prediction.
+The dashboard reads this local dataset. It does not automatically fetch new observations when opened.
 
-The project currently uses an offline dataset. It does not automatically fetch live weather observations or real-time forecasts from an external API.
+**Data freshness limitation:** The dataset ends on **30 June 2026**. The generated prediction date is therefore based on the final available historical observation, not the current date. The dashboard explicitly identifies historical predictions and warns when the forecast date is in the past.
 
-## 4. Dashboard Features
+---
 
-The project includes an interactive dashboard developed using Streamlit.
+## Dashboard
 
-Its main features include:
+The Streamlit application includes:
 
-- **Province Selection:** Filter available predictions by province.
-- **Location Selection:** View predictions for an individual location.
-- **Rainfall Probability:** Display the predicted probability of rainfall.
-- **Rain Alerts:** Identify locations where rainfall probability reaches the configured alert threshold.
-- **Rainfall Amount:** Display estimated rainfall in millimetres.
-- **Historical Rainfall Chart:** Explore historical rainfall observations.
-- **Pakistan Map:** Visualize rainfall probabilities using colour-coded markers.
-- **All Locations Table:** View next-day predictions for all available locations.
-- **Historical Prediction Simulation:** Select a historical date and compare model predictions with actual observations.
-- **Model Performance:** View rainfall occurrence evaluation metrics.
+- A nationwide summary of selected locations and rain alerts.
+- Province and location filters.
+- A selected-location next-day prediction panel.
+- A rainfall probability gauge.
+- Historical rainfall charts.
+- An interactive Pakistan map with probability-coloured markers.
+- A table of next-day predictions for the selected province or all locations.
+- A historical prediction simulation.
+- A model performance section.
 
-## 5. Project Structure
+---
+
+## Historical Prediction Simulation
+
+The dashboard includes a historical simulation feature to test the prediction pipeline on a selected date.
+
+For the selected date, the simulation:
+
+1. Uses historical records available before that date.
+2. Trains temporary rainfall-occurrence and rainfall-amount models.
+3. Generates predictions for the selected locations.
+4. Compares predicted rainfall occurrence and amount with the actual recorded values.
+5. Displays accuracy, precision, recall, F1 score, amount MAE, and location-wise comparisons.
+
+The simulation is separate from the saved production models used for the dashboard's normal next-day prediction.
+
+Two additional validation scripts are included:
+
+- `validation/historical_backtest.py`
+- `validation/historical_monthly_backtest.py`
+
+These scripts run selected historical backtests and save their results in the `reports/` directory. Their selected evaluation dates should be considered when interpreting the results; they are not an exhaustive daily evaluation of every possible forecast date.
+
+---
+
+## Technology Stack
+
+| Technology | Purpose |
+|---|---|
+| Python 3.12 | Main programming language |
+| Pandas | Data loading and manipulation |
+| NumPy | Numerical operations |
+| XGBoost | Rainfall occurrence and amount models |
+| Scikit-learn | Machine learning utilities and evaluation |
+| Joblib | Saving and loading trained models |
+| Streamlit | Interactive dashboard |
+| Plotly | Charts and visualizations |
+| Folium | Interactive map |
+| Streamlit-Folium | Displaying Folium maps in Streamlit |
+
+---
+
+## Project Structure
 
 ```text
 Pakistan-Rainfall-Prediction/
@@ -134,307 +255,112 @@ Pakistan-Rainfall-Prediction/
 │   ├── historical_12_month_backtest_results.csv
 │   └── historical_12_month_backtest_summary.csv
 │
-├── validation/
-│   ├── historical_backtest.py
-│   └── historical_monthly_backtest.py
-│
-└── archive/
+└── validation/
+    ├── historical_backtest.py
+    └── historical_monthly_backtest.py
 ```
 
-Note: The reports directory contains generated evaluation and validation files. Some files are created only after running their corresponding scripts. The archive directory contains retained experiment files and previous project work.
+---
 
-## 6. Technologies and Dependencies
+## Installation and Setup
 
-The project is developed using Python and the following libraries:
-
-| Technology | Purpose |
-|---|---|
-| Python | Main programming language |
-| Pandas | Dataset handling and preprocessing |
-| NumPy | Numerical operations |
-| XGBoost | Machine-learning models |
-| Scikit-learn | Preprocessing and evaluation |
-| Joblib | Saving and loading trained models |
-| Streamlit | Interactive web dashboard |
-| Plotly | Data visualization |
-| Folium | Interactive geographical map |
-| Streamlit-Folium | Displaying Folium maps in Streamlit |
-
-## 7. Installation and Setup
-
-### 7.1 Prerequisites
-
-- Python 3.12
-- pip
-- The project dataset
-- The trained model and report files required by the dashboard
-
-### 7.2 Clone the Repository
-
-If the project is hosted on GitHub:
+### 1. Clone the repository
 
 ```bash
-git clone YOUR_REPOSITORY_URL
-```
-
-Navigate into the project directory:
-
-```bash
+git clone <https://github.com/jaweriawaheed19/Rainfall-Prediction-System.git>
 cd Pakistan-Rainfall-Prediction
 ```
 
-Alternatively, open the downloaded project folder in Visual Studio Code.
+### 2. Create a virtual environment
 
-### 7.3 Create a Virtual Environment
+Python **3.12** is the recommended version for this project.
 
-On Windows PowerShell:
+**Windows PowerShell:**
 
 ```powershell
 py -3.12 -m venv .venv
 ```
 
-### 7.4 Activate the Virtual Environment
+### 3. Activate the virtual environment
 
 ```powershell
-.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 ```
 
-### 7.5 Install Dependencies
+If PowerShell blocks script activation, use Command Prompt or adjust the execution policy for your user according to your system's security requirements.
 
-Upgrade pip:
+### 4. Install dependencies
 
 ```powershell
 python -m pip install --upgrade pip
-```
-
-Install all project dependencies:
-
-```powershell
 pip install -r requirements.txt
 ```
 
-## 8. Running the Dashboard
-
-Before starting the application, make sure the required dataset, model, and report files are available.
-
-Run the following command from the project root directory:
+### 5. Run the dashboard
 
 ```powershell
 streamlit run app.py
 ```
 
-The dashboard will open in your default browser.
+Streamlit will provide a local URL, usually:
 
-Default local address:
+```text
+http://localhost:8501
+```
 
-`http://localhost:8501`
+Open that address in your browser.
 
-To stop the application, press `Ctrl + C` in the terminal.
+---
 
-## 9. Training the Machine-Learning Models
+## Training the Models
 
-Both models can be trained using their respective Python scripts.
+The repository includes separate training scripts for the two prediction tasks.
 
-Run all commands from the project root directory.
-
-### 9.1 Train the Rainfall Occurrence Model
+### Train the rainfall occurrence classifier
 
 ```powershell
 python train_occurrence.py
 ```
 
-This script performs the following operations:
-
-1. Loads the historical rainfall dataset.
-2. Prepares the model features and prediction targets.
-3. Applies a chronological training and testing split.
-4. Trains an XGBoost classification model.
-5. Evaluates the model using held-out observations.
-6. Trains the final production model.
-7. Generates next-day rainfall predictions for available locations.
-8. Saves the trained model and evaluation reports.
-
-Generated files:
-
-- `models/rain_occurrence_xgb.pkl`
-- `reports/rain_occurrence_model_evaluation.csv`
-- `reports/rain_occurrence_forecast.csv`
-
-### 9.2 Train the Rainfall Amount Model
+### Train the rainfall amount regressor
 
 ```powershell
 python train_amount.py
 ```
 
-This script:
+Run these scripts from the project root with the virtual environment activated. They use the local dataset and generate the corresponding trained model and evaluation outputs.
 
-1. Loads the historical rainfall dataset.
-2. Prepares rainfall amount prediction features.
-3. Applies a chronological training and testing split.
-4. Trains an XGBoost rainfall amount regressor.
-5. Evaluates rainfall amount predictions.
-6. Trains a temporary occurrence classifier for combined evaluation.
-7. Evaluates the combined occurrence-and-amount prediction approach.
-8. Trains the final production amount model.
-9. Saves the trained model and evaluation reports.
+---
 
-Generated files:
+## Limitations and Future Improvements
 
-- `models/rain_amount_xgb.pkl`
-- `reports/rain_amount_model_evaluation.csv`
-- `reports/rain_amount_test_predictions.csv`
+The current implementation has several important limitations:
 
-**Important:** The amount training script protects an existing model. If `models/rain_amount_xgb.pkl` already exists, the script stops instead of overwriting it. Back up or deliberately move the existing model before retraining.
+- **Historical data only:** The dashboard does not fetch live weather observations or current forecasts.
+- **Next-day horizon:** The system predicts the next day only; it does not provide a multi-day forecast.
+- **Selected locations:** Coverage is limited to 22 selected locations, not every district or grid cell in Pakistan.
+- **Amount-model limitations:** Rainfall amount regression has limited predictive performance and should be improved with further feature engineering, tuning, and evaluation.
+- **Rainfall is not flooding:** Rainfall predictions do not directly indicate river flooding, flash floods, flood severity, or affected population.
+- **No guarantee of accuracy:** Model performance on historical test data does not guarantee performance on future weather conditions.
 
-## 10. Historical Prediction Simulation
+Potential future improvements include updating the dataset, expanding geographical coverage, adding meteorological forecast inputs, testing additional features, improving regression performance, and evaluating the system across more historical dates.
 
-The project includes a separate historical simulation module:
+---
 
-`historical_simulation.py`
+## Academic Project Note
 
-It evaluates how the prediction system would have performed on a selected historical date.
+This project demonstrates the application of supervised machine learning to rainfall occurrence classification and rainfall amount regression, together with historical validation and an interactive visualization dashboard.
 
-The simulation:
+It is intended for academic demonstration and experimentation. It should not be used as an official meteorological warning system or for safety-critical decisions.
 
-- Uses observations available before the selected prediction date for training.
-- Trains temporary occurrence and amount models.
-- Generates predictions for the selected historical date.
-- Compares predictions with actual rainfall observations.
-- Calculates occurrence accuracy and rainfall amount MAE.
+---
 
-Run a simulation using:
+<div align="center">
 
-```powershell
-python historical_simulation.py --date 2025-07-01
-```
+### Pakistan Rainfall Prediction System
 
-Replace the date with the historical date you want to evaluate, using the `YYYY-MM-DD` format.
+**Built with Python · XGBoost · Streamlit**
 
-The historical simulation is also integrated into the Streamlit dashboard.
+<sub>Academic Machine Learning Project</sub>
 
-## 11. Historical Backtesting
-
-Two additional validation scripts are included in the `validation/` directory.
-
-### 11.1 Multi-Date Historical Backtest
-
-Run:
-
-```powershell
-python validation\historical_backtest.py
-```
-
-This script evaluates selected historical dates across multiple years.
-
-It calculates:
-
-- Accuracy
-- Precision
-- Recall
-- F1-score
-- Rainfall amount MAE
-- Confusion matrix counts
-
-Generated reports:
-
-- `reports/historical_backtest_results.csv`
-- `reports/historical_backtest_summary.csv`
-
-### 11.2 Twelve-Month Historical Backtest
-
-Run:
-
-```powershell
-python validation\historical_monthly_backtest.py
-```
-
-This script evaluates selected dates across the twelve months of 2025.
-
-It provides:
-
-- Overall model performance.
-- Monthly performance summaries.
-- Accuracy and balanced accuracy.
-- Precision, recall, and F1-score.
-- Rainfall amount MAE.
-- Comparison against an always-dry baseline.
-
-Generated reports:
-
-- `reports/historical_12_month_backtest_results.csv`
-- `reports/historical_12_month_backtest_summary.csv`
-
-These scripts evaluate selected historical dates, not every day in the dataset. Their results should be interpreted accordingly.
-
-## 12. Model Evaluation Metrics
-
-Different evaluation metrics are used for the two prediction tasks.
-
-### 12.1 Rainfall Occurrence Metrics
-
-| Metric | Purpose |
-|---|---|
-| Accuracy | Measures the proportion of correct predictions |
-| Precision | Measures how many predicted rainy cases were actually rainy |
-| Recall | Measures how many actual rainy cases were identified |
-| F1-score | Combines precision and recall |
-| Balanced Accuracy | Accounts for both rainy and dry classes |
-| ROC-AUC | Measures the classifier's ability to distinguish between classes |
-| PR-AUC | Evaluates precision-recall performance |
-| Brier Score | Measures the accuracy of predicted probabilities |
-| Log Loss | Evaluates the quality of predicted probabilities |
-
-### 12.2 Rainfall Amount Metrics
-
-| Metric | Purpose |
-|---|---|
-| MAE | Measures average absolute prediction error |
-| RMSE | Penalizes larger prediction errors more heavily |
-| R² | Measures the proportion of target variance explained by the model |
-
-The evaluation reports are saved in the `reports/` directory.
-
-## 13. Important Project Limitations
-
-The following limitations should be considered when interpreting the predictions:
-
-1. **Offline Dataset:** The system currently uses locally stored historical observations and does not fetch live weather data automatically.
-2. **Next-Day Prediction:** The current prediction horizon is one day, not a three-day or seven-day forecast.
-3. **Selected Locations:** Predictions cover the 22 locations represented in the dataset, not every geographical point in Pakistan.
-4. **Historical Forecast Date:** The generated forecast is based on the latest observations available in the dataset. Since the dataset ends on 30 June 2026, the generated prediction is for 1 July 2026. It is not a current weather forecast.
-5. **Rainfall Prediction Only:** The system predicts rainfall occurrence and estimates rainfall amount. It does not currently predict floods, flood severity, or flood extent.
-6. **Historical Evaluation:** Historical simulation and backtesting results do not guarantee future prediction accuracy.
-7. **Model Limitations:** Prediction performance depends on the quality, coverage, and characteristics of the available historical data.
-
-## 14. Required Files for Project Execution
-
-The following files are important for running the dashboard:
-
-| File | Purpose |
-|---|---|
-| `data/rainfall.csv` | Historical rainfall dataset |
-| `reports/rain_occurrence_forecast.csv` | Generated next-day occurrence predictions |
-| `reports/rain_occurrence_model_evaluation.csv` | Occurrence model evaluation results |
-| `models/rain_amount_xgb.pkl` | Trained rainfall amount model |
-| `historical_simulation.py` | Historical prediction simulation module |
-
-The occurrence model file `models/rain_occurrence_xgb.pkl` is required when retraining or regenerating occurrence predictions. The dashboard reads the generated occurrence forecast CSV rather than loading that classifier directly.
-
-## 15. Dataset and Model File Management
-
-The `.gitignore` file excludes large dataset and model files from Git:
-
-- `data/*.csv`
-- `models/*.pkl`
-
-These files are still necessary for executing the complete project.
-
-When sharing or submitting the project, include the required dataset, trained models, and generated reports in the submission package separately.
-
-## 16. Academic Use
-
-This project was developed as an academic machine-learning semester project.
-
-It demonstrates the application of supervised machine learning, historical weather data processing, model evaluation, geographical visualization, and interactive dashboard development.
-
-The system is intended for educational and experimental purposes. Its predictions are not official meteorological warnings and should not replace information from government meteorological or disaster-management authorities.
+</div>
