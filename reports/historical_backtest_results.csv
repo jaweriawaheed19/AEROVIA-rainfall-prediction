@@ -1,0 +1,133 @@
+location,province,latitude,longitude,simulation_date,target_rainfall,rain_probability,predicted_rain,prediction,estimated_rainfall_mm,actual_rainfall_mm,actual_rain,amount_absolute_error_mm,occurrence_correct,rain_probability_percent
+Badin,Sindh,24.6556,68.8386,2023-01-15,0.0,0.0061383834,0,No Rain Expected,0.076,0.0,0,0.076,True,0.6138383
+Bahawalpur,Punjab,29.3956,71.6836,2023-01-15,0.0,0.004292113,0,No Rain Expected,0.217,0.0,0,0.217,True,0.4292113
+Charsadda,Khyber Pakhtunkhwa,34.1482,71.7406,2023-01-15,0.04,0.031404454,0,No Rain Expected,1.064,0.04,0,1.024,True,3.1404455
+Dadu,Sindh,26.7303,67.7769,2023-01-15,0.0,0.0074286438,0,No Rain Expected,0.23,0.0,0,0.23,True,0.7428644
+Dera_Ismail_Khan,Khyber Pakhtunkhwa,31.8327,70.9024,2023-01-15,0.0,0.017599335,0,No Rain Expected,0.44,0.0,0,0.44,True,1.7599335
+Jacobabad,Sindh,28.2819,68.4382,2023-01-15,0.0,0.013303073,0,No Rain Expected,0.195,0.0,0,0.195,True,1.3303074
+Jaffarabad,Balochistan,28.24,68.36,2023-01-15,0.0,0.010935718,0,No Rain Expected,0.217,0.0,0,0.217,True,1.0935718
+Jalalpur_Pirwala,Punjab,29.5051,71.219,2023-01-15,0.0,0.004575593,0,No Rain Expected,0.219,0.0,0,0.219,True,0.4575593
+Jhal_Magsi,Balochistan,28.3642,67.5455,2023-01-15,0.0,0.015082952,0,No Rain Expected,0.411,0.0,0,0.411,True,1.5082952
+Kasur,Punjab,31.1187,74.45,2023-01-15,0.0,0.011977801,0,No Rain Expected,0.645,0.0,0,0.645,True,1.1977801
+Larkana,Sindh,27.5609,68.2264,2023-01-15,0.0,0.011119433,0,No Rain Expected,0.216,0.0,0,0.216,True,1.1119432
+Mingora_Swat,Khyber Pakhtunkhwa,34.7717,72.36,2023-01-15,0.08,0.05603579,0,No Rain Expected,1.326,0.08,0,1.246,True,5.603579
+Multan,Punjab,30.1575,71.5249,2023-01-15,0.0,0.005295516,0,No Rain Expected,0.268,0.0,0,0.268,True,0.5295516
+Nasirabad,Balochistan,28.8173,68.8995,2023-01-15,0.0,0.014304157,0,No Rain Expected,0.25,0.0,0,0.25,True,1.4304157
+Nowshera,Khyber Pakhtunkhwa,34.015,71.9747,2023-01-15,0.04,0.032106694,0,No Rain Expected,1.064,0.04,0,1.024,True,3.2106693
+Qambar_Shahdadkot,Sindh,27.5911,68.0083,2023-01-15,0.0,0.011119433,0,No Rain Expected,0.216,0.0,0,0.216,True,1.1119432
+Shujaabad,Punjab,29.8809,71.2934,2023-01-15,0.0,0.005277365,0,No Rain Expected,0.268,0.0,0,0.268,True,0.5277365
+Sialkot,Punjab,32.4945,74.5229,2023-01-15,0.0,0.099699855,0,No Rain Expected,1.216,0.0,0,1.216,True,9.969986
+Sohbatpur,Balochistan,28.5204,68.5423,2023-01-15,0.0,0.010963956,0,No Rain Expected,0.195,0.0,0,0.195,True,1.0963956
+Sukkur,Sindh,27.7052,68.8574,2023-01-15,0.0,0.009528483,0,No Rain Expected,0.178,0.0,0,0.178,True,0.9528483
+Tank,Khyber Pakhtunkhwa,32.2171,70.3832,2023-01-15,0.0,0.018523907,0,No Rain Expected,0.44,0.0,0,0.44,True,1.8523908
+Thatta,Sindh,24.7475,67.9235,2023-01-15,0.0,0.006536468,0,No Rain Expected,0.092,0.0,0,0.092,True,0.65364677
+Badin,Sindh,24.6556,68.8386,2023-07-15,0.0,0.07041626,0,No Rain Expected,2.279,0.0,0,2.279,True,7.0416255
+Bahawalpur,Punjab,29.3956,71.6836,2023-07-15,1.06,0.35018933,1,Rain Expected,1.238,1.06,1,0.178,True,35.018932
+Charsadda,Khyber Pakhtunkhwa,34.1482,71.7406,2023-07-15,12.91,0.80699676,1,Rain Expected,2.553,12.91,1,10.357,True,80.69968
+Dadu,Sindh,26.7303,67.7769,2023-07-15,0.02,0.0329198,0,No Rain Expected,1.105,0.02,0,1.085,True,3.2919803
+Dera_Ismail_Khan,Khyber Pakhtunkhwa,31.8327,70.9024,2023-07-15,0.18,0.6648327,1,Rain Expected,1.981,0.18,0,1.801,False,66.48327
+Jacobabad,Sindh,28.2819,68.4382,2023-07-15,0.02,0.11832255,0,No Rain Expected,1.356,0.02,0,1.336,True,11.832255
+Jaffarabad,Balochistan,28.24,68.36,2023-07-15,0.01,0.098150425,0,No Rain Expected,1.157,0.01,0,1.147,True,9.8150425
+Jalalpur_Pirwala,Punjab,29.5051,71.219,2023-07-15,0.17,0.27926832,0,No Rain Expected,1.18,0.17,0,1.01,True,27.926832
+Jhal_Magsi,Balochistan,28.3642,67.5455,2023-07-15,0.07,0.23805049,0,No Rain Expected,1.255,0.07,0,1.185,True,23.80505
+Kasur,Punjab,31.1187,74.45,2023-07-15,15.99,0.74870396,1,Rain Expected,4.087,15.99,1,11.903,True,74.87039
+Larkana,Sindh,27.5609,68.2264,2023-07-15,0.01,0.053733364,0,No Rain Expected,0.967,0.01,0,0.957,True,5.3733363
+Mingora_Swat,Khyber Pakhtunkhwa,34.7717,72.36,2023-07-15,6.14,0.7270051,1,Rain Expected,2.484,6.14,1,3.656,True,72.700516
+Multan,Punjab,30.1575,71.5249,2023-07-15,0.28,0.30852482,1,Rain Expected,1.299,0.28,0,1.019,False,30.852482
+Nasirabad,Balochistan,28.8173,68.8995,2023-07-15,0.0,0.32045293,1,Rain Expected,1.472,0.0,0,1.472,False,32.04529
+Nowshera,Khyber Pakhtunkhwa,34.015,71.9747,2023-07-15,12.91,0.80751246,1,Rain Expected,2.553,12.91,1,10.357,True,80.75124
+Qambar_Shahdadkot,Sindh,27.5911,68.0083,2023-07-15,0.01,0.05496406,0,No Rain Expected,0.967,0.01,0,0.957,True,5.496406
+Shujaabad,Punjab,29.8809,71.2934,2023-07-15,0.28,0.3046138,1,Rain Expected,1.299,0.28,0,1.019,False,30.46138
+Sialkot,Punjab,32.4945,74.5229,2023-07-15,16.2,0.8700547,1,Rain Expected,7.113,16.2,1,9.087,True,87.00547
+Sohbatpur,Balochistan,28.5204,68.5423,2023-07-15,0.02,0.17328961,0,No Rain Expected,1.356,0.02,0,1.336,True,17.32896
+Sukkur,Sindh,27.7052,68.8574,2023-07-15,0.04,0.054782074,0,No Rain Expected,1.08,0.04,0,1.04,True,5.4782076
+Tank,Khyber Pakhtunkhwa,32.2171,70.3832,2023-07-15,0.18,0.6542867,1,Rain Expected,1.981,0.18,0,1.801,False,65.428665
+Thatta,Sindh,24.7475,67.9235,2023-07-15,0.0,0.05484791,0,No Rain Expected,2.123,0.0,0,2.123,True,5.4847913
+Badin,Sindh,24.6556,68.8386,2024-01-15,0.0,0.016616374,0,No Rain Expected,0.074,0.0,0,0.074,True,1.6616374
+Bahawalpur,Punjab,29.3956,71.6836,2024-01-15,0.0,0.027422799,0,No Rain Expected,0.214,0.0,0,0.214,True,2.7422798
+Charsadda,Khyber Pakhtunkhwa,34.1482,71.7406,2024-01-15,0.0,0.106226906,0,No Rain Expected,1.069,0.0,0,1.069,True,10.62269
+Dadu,Sindh,26.7303,67.7769,2024-01-15,0.0,0.05153405,0,No Rain Expected,0.238,0.0,0,0.238,True,5.1534047
+Dera_Ismail_Khan,Khyber Pakhtunkhwa,31.8327,70.9024,2024-01-15,0.0,0.04512987,0,No Rain Expected,0.434,0.0,0,0.434,True,4.512987
+Jacobabad,Sindh,28.2819,68.4382,2024-01-15,0.0,0.04514515,0,No Rain Expected,0.2,0.0,0,0.2,True,4.514515
+Jaffarabad,Balochistan,28.24,68.36,2024-01-15,0.0,0.048251957,0,No Rain Expected,0.218,0.0,0,0.218,True,4.825196
+Jalalpur_Pirwala,Punjab,29.5051,71.219,2024-01-15,0.0,0.026757892,0,No Rain Expected,0.218,0.0,0,0.218,True,2.675789
+Jhal_Magsi,Balochistan,28.3642,67.5455,2024-01-15,0.0,0.12157555,0,No Rain Expected,0.416,0.0,0,0.416,True,12.157555
+Kasur,Punjab,31.1187,74.45,2024-01-15,0.0,0.041782375,0,No Rain Expected,0.637,0.0,0,0.637,True,4.1782374
+Larkana,Sindh,27.5609,68.2264,2024-01-15,0.0,0.043604445,0,No Rain Expected,0.217,0.0,0,0.217,True,4.3604445
+Mingora_Swat,Khyber Pakhtunkhwa,34.7717,72.36,2024-01-15,0.0,0.042183813,0,No Rain Expected,1.341,0.0,0,1.341,True,4.2183814
+Multan,Punjab,30.1575,71.5249,2024-01-15,0.0,0.032802626,0,No Rain Expected,0.265,0.0,0,0.265,True,3.2802627
+Nasirabad,Balochistan,28.8173,68.8995,2024-01-15,0.0,0.058259226,0,No Rain Expected,0.254,0.0,0,0.254,True,5.8259225
+Nowshera,Khyber Pakhtunkhwa,34.015,71.9747,2024-01-15,0.0,0.10689402,0,No Rain Expected,1.069,0.0,0,1.069,True,10.689403
+Qambar_Shahdadkot,Sindh,27.5911,68.0083,2024-01-15,0.0,0.043604445,0,No Rain Expected,0.217,0.0,0,0.217,True,4.3604445
+Shujaabad,Punjab,29.8809,71.2934,2024-01-15,0.0,0.032408483,0,No Rain Expected,0.265,0.0,0,0.265,True,3.2408483
+Sialkot,Punjab,32.4945,74.5229,2024-01-15,0.0,0.07273247,0,No Rain Expected,1.219,0.0,0,1.219,True,7.2732472
+Sohbatpur,Balochistan,28.5204,68.5423,2024-01-15,0.0,0.038711585,0,No Rain Expected,0.2,0.0,0,0.2,True,3.8711586
+Sukkur,Sindh,27.7052,68.8574,2024-01-15,0.0,0.03793007,0,No Rain Expected,0.18,0.0,0,0.18,True,3.7930071
+Tank,Khyber Pakhtunkhwa,32.2171,70.3832,2024-01-15,0.0,0.045808088,0,No Rain Expected,0.434,0.0,0,0.434,True,4.5808086
+Thatta,Sindh,24.7475,67.9235,2024-01-15,0.0,0.021578385,0,No Rain Expected,0.09,0.0,0,0.09,True,2.1578383
+Badin,Sindh,24.6556,68.8386,2024-07-15,2.36,0.099942185,0,No Rain Expected,2.346,2.36,1,0.014,False,9.994219
+Bahawalpur,Punjab,29.3956,71.6836,2024-07-15,0.0,0.3704235,1,Rain Expected,1.342,0.0,0,1.342,False,37.04235
+Charsadda,Khyber Pakhtunkhwa,34.1482,71.7406,2024-07-15,3.03,0.43325612,1,Rain Expected,2.681,3.03,1,0.349,True,43.32561
+Dadu,Sindh,26.7303,67.7769,2024-07-15,0.02,0.10140307,0,No Rain Expected,1.242,0.02,0,1.222,True,10.140307
+Dera_Ismail_Khan,Khyber Pakhtunkhwa,31.8327,70.9024,2024-07-15,0.25,0.3999465,1,Rain Expected,2.029,0.25,0,1.779,False,39.99465
+Jacobabad,Sindh,28.2819,68.4382,2024-07-15,5.56,0.18302327,0,No Rain Expected,1.412,5.56,1,4.148,False,18.302328
+Jaffarabad,Balochistan,28.24,68.36,2024-07-15,0.45,0.13390735,0,No Rain Expected,1.219,0.45,0,0.769,True,13.390735
+Jalalpur_Pirwala,Punjab,29.5051,71.219,2024-07-15,0.0,0.4339327,1,Rain Expected,1.275,0.0,0,1.275,False,43.39327
+Jhal_Magsi,Balochistan,28.3642,67.5455,2024-07-15,15.46,0.22062637,0,No Rain Expected,1.311,15.46,1,14.149,False,22.062637
+Kasur,Punjab,31.1187,74.45,2024-07-15,0.0,0.41328883,1,Rain Expected,4.236,0.0,0,4.236,False,41.328884
+Larkana,Sindh,27.5609,68.2264,2024-07-15,0.05,0.165639,0,No Rain Expected,1.057,0.05,0,1.007,True,16.5639
+Mingora_Swat,Khyber Pakhtunkhwa,34.7717,72.36,2024-07-15,4.04,0.5351679,1,Rain Expected,2.571,4.04,1,1.469,True,53.51679
+Multan,Punjab,30.1575,71.5249,2024-07-15,0.0,0.4721684,1,Rain Expected,1.39,0.0,0,1.39,False,47.21684
+Nasirabad,Balochistan,28.8173,68.8995,2024-07-15,8.38,0.2438144,0,No Rain Expected,1.544,8.38,1,6.836,False,24.38144
+Nowshera,Khyber Pakhtunkhwa,34.015,71.9747,2024-07-15,3.03,0.43780032,1,Rain Expected,2.681,3.03,1,0.349,True,43.780033
+Qambar_Shahdadkot,Sindh,27.5911,68.0083,2024-07-15,0.05,0.165639,0,No Rain Expected,1.057,0.05,0,1.007,True,16.5639
+Shujaabad,Punjab,29.8809,71.2934,2024-07-15,0.0,0.47090983,1,Rain Expected,1.39,0.0,0,1.39,False,47.090984
+Sialkot,Punjab,32.4945,74.5229,2024-07-15,0.0,0.43532342,1,Rain Expected,7.257,0.0,0,7.257,False,43.53234
+Sohbatpur,Balochistan,28.5204,68.5423,2024-07-15,5.56,0.18545474,0,No Rain Expected,1.412,5.56,1,4.148,False,18.545475
+Sukkur,Sindh,27.7052,68.8574,2024-07-15,0.0,0.09874225,0,No Rain Expected,1.192,0.0,0,1.192,True,9.874225
+Tank,Khyber Pakhtunkhwa,32.2171,70.3832,2024-07-15,0.25,0.40548348,1,Rain Expected,2.029,0.25,0,1.779,False,40.548347
+Thatta,Sindh,24.7475,67.9235,2024-07-15,1.93,0.08434719,0,No Rain Expected,2.191,1.93,1,0.261,False,8.434719
+Badin,Sindh,24.6556,68.8386,2025-01-15,0.0,0.022248987,0,No Rain Expected,0.073,0.0,0,0.073,True,2.2248988
+Bahawalpur,Punjab,29.3956,71.6836,2025-01-15,0.01,0.08514468,0,No Rain Expected,0.21,0.01,0,0.2,True,8.514468
+Charsadda,Khyber Pakhtunkhwa,34.1482,71.7406,2025-01-15,0.0,0.0583898,0,No Rain Expected,1.079,0.0,0,1.079,True,5.83898
+Dadu,Sindh,26.7303,67.7769,2025-01-15,0.0,0.038028628,0,No Rain Expected,0.233,0.0,0,0.233,True,3.8028626
+Dera_Ismail_Khan,Khyber Pakhtunkhwa,31.8327,70.9024,2025-01-15,0.02,0.037266392,0,No Rain Expected,0.429,0.02,0,0.409,True,3.7266393
+Jacobabad,Sindh,28.2819,68.4382,2025-01-15,0.03,0.03150376,0,No Rain Expected,0.196,0.03,0,0.166,True,3.1503758
+Jaffarabad,Balochistan,28.24,68.36,2025-01-15,0.02,0.028728573,0,No Rain Expected,0.213,0.02,0,0.193,True,2.8728573
+Jalalpur_Pirwala,Punjab,29.5051,71.219,2025-01-15,0.14,0.07087758,0,No Rain Expected,0.213,0.14,0,0.073,True,7.087758
+Jhal_Magsi,Balochistan,28.3642,67.5455,2025-01-15,0.01,0.042599645,0,No Rain Expected,0.408,0.01,0,0.398,True,4.2599645
+Kasur,Punjab,31.1187,74.45,2025-01-15,0.0,0.08038964,0,No Rain Expected,0.632,0.0,0,0.632,True,8.038964
+Larkana,Sindh,27.5609,68.2264,2025-01-15,0.0,0.032552943,0,No Rain Expected,0.212,0.0,0,0.212,True,3.2552943
+Mingora_Swat,Khyber Pakhtunkhwa,34.7717,72.36,2025-01-15,0.0,0.05322992,0,No Rain Expected,1.359,0.0,0,1.359,True,5.322992
+Multan,Punjab,30.1575,71.5249,2025-01-15,0.17,0.07262843,0,No Rain Expected,0.26,0.17,0,0.09,True,7.262843
+Nasirabad,Balochistan,28.8173,68.8995,2025-01-15,0.12,0.030477745,0,No Rain Expected,0.249,0.12,0,0.129,True,3.0477746
+Nowshera,Khyber Pakhtunkhwa,34.015,71.9747,2025-01-15,0.0,0.058331214,0,No Rain Expected,1.079,0.0,0,1.079,True,5.8331213
+Qambar_Shahdadkot,Sindh,27.5911,68.0083,2025-01-15,0.0,0.032046348,0,No Rain Expected,0.212,0.0,0,0.212,True,3.2046347
+Shujaabad,Punjab,29.8809,71.2934,2025-01-15,0.17,0.07161776,0,No Rain Expected,0.26,0.17,0,0.09,True,7.161776
+Sialkot,Punjab,32.4945,74.5229,2025-01-15,0.0,0.05618651,0,No Rain Expected,1.204,0.0,0,1.204,True,5.618651
+Sohbatpur,Balochistan,28.5204,68.5423,2025-01-15,0.03,0.026118223,0,No Rain Expected,0.196,0.03,0,0.166,True,2.6118224
+Sukkur,Sindh,27.7052,68.8574,2025-01-15,0.0,0.03174611,0,No Rain Expected,0.176,0.0,0,0.176,True,3.174611
+Tank,Khyber Pakhtunkhwa,32.2171,70.3832,2025-01-15,0.02,0.037554592,0,No Rain Expected,0.429,0.02,0,0.409,True,3.7554593
+Thatta,Sindh,24.7475,67.9235,2025-01-15,0.0,0.026254412,0,No Rain Expected,0.089,0.0,0,0.089,True,2.625441
+Badin,Sindh,24.6556,68.8386,2025-07-15,0.9,0.17846675,0,No Rain Expected,2.369,0.9,0,1.469,True,17.846676
+Bahawalpur,Punjab,29.3956,71.6836,2025-07-15,17.95,0.52628434,1,Rain Expected,1.351,17.95,1,16.599,True,52.628433
+Charsadda,Khyber Pakhtunkhwa,34.1482,71.7406,2025-07-15,7.32,0.64537483,1,Rain Expected,3.019,7.32,1,4.301,True,64.53748
+Dadu,Sindh,26.7303,67.7769,2025-07-15,0.97,0.46831772,1,Rain Expected,1.24,0.97,0,0.27,False,46.83177
+Dera_Ismail_Khan,Khyber Pakhtunkhwa,31.8327,70.9024,2025-07-15,5.89,0.5468959,1,Rain Expected,2.05,5.89,1,3.84,True,54.68959
+Jacobabad,Sindh,28.2819,68.4382,2025-07-15,2.19,0.31416258,1,Rain Expected,1.453,2.19,1,0.737,True,31.416258
+Jaffarabad,Balochistan,28.24,68.36,2025-07-15,1.43,0.32894164,1,Rain Expected,1.219,1.43,1,0.211,True,32.894165
+Jalalpur_Pirwala,Punjab,29.5051,71.219,2025-07-15,11.14,0.4842588,1,Rain Expected,1.283,11.14,1,9.857,True,48.42588
+Jhal_Magsi,Balochistan,28.3642,67.5455,2025-07-15,3.8,0.31379712,1,Rain Expected,1.386,3.8,1,2.414,True,31.379711
+Kasur,Punjab,31.1187,74.45,2025-07-15,35.13,0.84747285,1,Rain Expected,4.391,35.13,1,30.739,True,84.747284
+Larkana,Sindh,27.5609,68.2264,2025-07-15,1.09,0.34369302,1,Rain Expected,1.046,1.09,1,0.044,True,34.3693
+Mingora_Swat,Khyber Pakhtunkhwa,34.7717,72.36,2025-07-15,7.28,0.5281285,1,Rain Expected,2.684,7.28,1,4.596,True,52.81285
+Multan,Punjab,30.1575,71.5249,2025-07-15,10.67,0.5190119,1,Rain Expected,1.397,10.67,1,9.273,True,51.90119
+Nasirabad,Balochistan,28.8173,68.8995,2025-07-15,2.47,0.33620626,1,Rain Expected,1.639,2.47,1,0.831,True,33.620625
+Nowshera,Khyber Pakhtunkhwa,34.015,71.9747,2025-07-15,7.32,0.6582858,1,Rain Expected,3.019,7.32,1,4.301,True,65.82858
+Qambar_Shahdadkot,Sindh,27.5911,68.0083,2025-07-15,1.09,0.34681934,1,Rain Expected,1.046,1.09,1,0.044,True,34.681934
+Shujaabad,Punjab,29.8809,71.2934,2025-07-15,10.67,0.511029,1,Rain Expected,1.397,10.67,1,9.273,True,51.1029
+Sialkot,Punjab,32.4945,74.5229,2025-07-15,16.52,0.86336446,1,Rain Expected,7.378,16.52,1,9.142,True,86.33645
+Sohbatpur,Balochistan,28.5204,68.5423,2025-07-15,2.19,0.33915704,1,Rain Expected,1.453,2.19,1,0.737,True,33.915703
+Sukkur,Sindh,27.7052,68.8574,2025-07-15,3.4,0.31389213,1,Rain Expected,1.186,3.4,1,2.214,True,31.389214
+Tank,Khyber Pakhtunkhwa,32.2171,70.3832,2025-07-15,5.89,0.55095553,1,Rain Expected,2.05,5.89,1,3.84,True,55.095554
+Thatta,Sindh,24.7475,67.9235,2025-07-15,0.94,0.15124469,0,No Rain Expected,2.213,0.94,0,1.273,True,15.124469
