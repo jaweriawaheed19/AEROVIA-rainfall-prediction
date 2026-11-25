@@ -1,6 +1,8 @@
 <div align="center">
 
-# Pakistan Rainfall Prediction System
+# AEROVIA
+
+### Pakistan Rainfall Prediction System
 
 ### Machine Learning–Based Next-Day Rainfall Prediction Across Pakistan
 
@@ -22,7 +24,7 @@
 
 ## Project Overview
 
-The **Pakistan Rainfall Prediction System** is a machine learning academic project that predicts next-day rainfall for **22 selected locations across Pakistan**.
+**AEROVIA**, the Pakistan Rainfall Prediction System, is a machine learning academic project that predicts next-day rainfall for **22 selected locations across Pakistan**.
 
 The system uses historical weather observations and a two-stage machine learning approach:
 
@@ -228,7 +230,7 @@ These scripts run selected historical backtests and save their results in the `r
 ## Project Structure
 
 ```text
-Pakistan-Rainfall-Prediction/
+AEROVIA-rainfall-prediction/
 │
 ├── app.py
 ├── historical_simulation.py
@@ -267,8 +269,8 @@ Pakistan-Rainfall-Prediction/
 ### 1. Clone the repository
 
 ```bash
-git clone <https://github.com/jaweriawaheed19/Rainfall-Prediction-System.git>
-cd Pakistan-Rainfall-Prediction
+git clone https://github.com/jaweriawaheed19/AEROVIA-rainfall-prediction.git
+cd AEROVIA-rainfall-prediction
 ```
 
 ### 2. Create a virtual environment
@@ -357,7 +359,9 @@ It is intended for academic demonstration and experimentation. It should not be 
 
 <div align="center">
 
-### Pakistan Rainfall Prediction System
+### AEROVIA
+
+**Pakistan Rainfall Prediction System**
 
 **Built with Python · XGBoost · Streamlit**
 
