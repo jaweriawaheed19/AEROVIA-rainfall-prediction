@@ -8,3 +8,6 @@ data/*.csv
 .env.*
 !.env.example
 .DS_Store
+
+# Local experiment archive
+archive/

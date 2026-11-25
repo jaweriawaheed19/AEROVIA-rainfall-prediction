@@ -1,13 +1,20 @@
-﻿import streamlit as st
+﻿from pathlib import Path
+from datetime import date
+
 import pandas as pd
+import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import folium
+
 from streamlit_folium import st_folium
 from folium.plugins import MarkerCluster
-from pathlib import Path
 
-# -------------------- CONFIGURATION --------------------
+
+# =========================================================
+# CONFIGURATION
+# =========================================================
+
 st.set_page_config(
     page_title="Pakistan Rainfall Prediction",
     page_icon="🌧️",
@@ -15,44 +22,88 @@ st.set_page_config(
 )
 
 DATA_FILE = Path("data/rainfall.csv")
-FORECAST_FILE = Path("reports/latest_forecast.csv")
-EVALUATION_FILE = Path("reports/model_evaluation.csv")
+FORECAST_FILE = Path("reports/rain_occurrence_forecast.csv")
+EVALUATION_FILE = Path("reports/rain_occurrence_model_evaluation.csv")
 
-# -------------------- LOAD DATA --------------------
+PROBABILITY_THRESHOLD = 0.30
+
+
+# =========================================================
+# LOAD DATA
+# =========================================================
+
 @st.cache_data
 def load_data():
+
     historical = pd.read_csv(DATA_FILE)
     forecast = pd.read_csv(FORECAST_FILE)
     evaluation = pd.read_csv(EVALUATION_FILE)
 
     historical["date"] = pd.to_datetime(historical["date"])
     forecast["forecast_date"] = pd.to_datetime(forecast["forecast_date"])
+    forecast["last_observed_date"] = pd.to_datetime(
+        forecast["last_observed_date"]
+    )
 
     return historical, forecast, evaluation
 
-historical, forecast, evaluation = load_data()
 
-# -------------------- HEADER --------------------
+try:
+    historical, forecast, evaluation = load_data()
+
+except Exception as error:
+    st.error(f"Unable to load project data: {error}")
+    st.stop()
+
+
+# =========================================================
+# HEADER
+# =========================================================
+
 st.title("🌧️ Pakistan Rainfall Prediction System")
+
 st.markdown(
-    "### Machine Learning Based 3-Day Rainfall Forecast"
+    "### Machine Learning Based Next-Day Rainfall Prediction"
 )
+
+st.markdown(
+    """
+    This system uses an **XGBoost classification model** to estimate
+    the probability of rainfall at 22 selected locations across Pakistan.
+    """
+)
+
+latest_observation = historical["date"].max()
+forecast_date = forecast["forecast_date"].max()
 
 st.info(
-    "Forecasts are generated using the trained machine learning models "
-    "and the latest date available in the historical dataset. "
-    "This is an offline prediction system and does not use live weather APIs."
+    f"Historical dataset available through **{latest_observation:%d %B %Y}**. "
+    f"The generated next-day prediction is for **{forecast_date:%d %B %Y}**. "
+    "This is an offline historical-data prediction, not a live weather forecast."
 )
 
-# -------------------- SIDEBAR --------------------
+if forecast_date.date() < date.today():
+    st.warning(
+        "These predictions are historical and are not valid as current "
+        "weather forecasts. Updated weather observations are required "
+        "to generate predictions for today's date."
+    )
+
+
+# =========================================================
+# SIDEBAR
+# =========================================================
+
 st.sidebar.title("Dashboard Controls")
 
-province_options = ["All Provinces"] + sorted(forecast["province"].unique())
+province_options = (
+    ["All Provinces"] +
+    sorted(forecast["province"].dropna().unique().tolist())
+)
 
 selected_province = st.sidebar.selectbox(
     "Select Province",
-    province_options,
-    key="province_select"
+    province_options
 )
 
 if selected_province == "All Provinces":
@@ -66,100 +117,195 @@ else:
     )
 
 selected_location = st.sidebar.selectbox(
-    "Select District",
-    available_locations,
-    key="district_select"
+    "Select Location",
+    available_locations
 )
 
-# -------------------- FILTER DATA --------------------
+st.sidebar.divider()
+
+st.sidebar.caption(
+    "Prediction target: Next-day rainfall of at least 1 mm"
+)
+
+st.sidebar.caption(
+    f"Rain alert threshold: {PROBABILITY_THRESHOLD:.0%} probability"
+)
+
+
+# =========================================================
+# FILTER DATA
+# =========================================================
+
 location_forecast = forecast[
     forecast["location"] == selected_location
-].sort_values("forecast_date")
+].copy()
 
 location_history = historical[
     historical["location"] == selected_location
-].sort_values("date")
+].sort_values("date").copy()
 
-latest_date = historical["date"].max()
+if selected_province == "All Provinces":
+    filtered_forecast = forecast.copy()
+else:
+    filtered_forecast = forecast[
+        forecast["province"] == selected_province
+    ].copy()
 
-# -------------------- METRICS --------------------
-total_locations = forecast["location"].nunique()
 
-total_predicted_rainfall = forecast["predicted_rainfall_mm"].sum()
+# =========================================================
+# DASHBOARD METRICS
+# =========================================================
 
-max_predicted_rainfall = forecast["predicted_rainfall_mm"].max()
+total_locations = filtered_forecast["location"].nunique()
 
-avg_mae = evaluation["MAE_mm"].mean()
+total_alerts = int(
+    filtered_forecast["predicted_rain"].sum()
+)
+
+highest_probability = filtered_forecast["rain_probability"].max()
+
+average_probability = filtered_forecast["rain_probability"].mean()
 
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("📍 Locations Covered", total_locations)
-col2.metric("🌧️ Total Forecast Rain", f"{total_predicted_rainfall:.2f} mm")
-col3.metric("⬆️ Maximum Predicted Rain", f"{max_predicted_rainfall:.2f} mm")
-col4.metric("🤖 Average Model MAE", f"{avg_mae:.2f} mm")
+col1.metric(
+    "📍 Locations Covered",
+    total_locations
+)
+
+col2.metric(
+    "🚨 Rain Alerts",
+    total_alerts
+)
+
+col3.metric(
+    "⬆️ Highest Rain Probability",
+    f"{highest_probability * 100:.2f}%"
+)
+
+col4.metric(
+    "📊 Average Rain Probability",
+    f"{average_probability * 100:.2f}%"
+)
 
 st.divider()
 
-# -------------------- LOCATION FORECAST --------------------
-st.subheader(f"📍 Rainfall Forecast: {selected_location}")
 
-province = location_forecast["province"].iloc[0]
+# =========================================================
+# SELECTED LOCATION PREDICTION
+# =========================================================
+
+st.subheader(f"📍 Next-Day Prediction: {selected_location}")
+
+selected_row = location_forecast.iloc[0]
+
+probability = float(selected_row["rain_probability"])
+
+province = selected_row["province"]
+
+prediction_date = selected_row["forecast_date"]
+
+last_observed = selected_row["last_observed_date"]
 
 st.caption(
-    f"Province: {province} | Forecast based on historical data through "
-    f"{latest_date.strftime('%d %B %Y')}"
+    f"Province: {province} | "
+    f"Last observation: {last_observed:%d %B %Y} | "
+    f"Prediction date: {prediction_date:%d %B %Y}"
 )
 
-forecast_columns = st.columns(3)
+prediction_col1, prediction_col2, prediction_col3 = st.columns(3)
 
-for i, row in enumerate(location_forecast.itertuples()):
-    forecast_columns[i].metric(
-        f"Day {row.forecast_day} — {row.forecast_date.strftime('%d %b %Y')}",
-        f"{max(0, row.predicted_rainfall_mm):.2f} mm"
+prediction_col1.metric(
+    "Rain Probability",
+    f"{probability * 100:.2f}%"
+)
+
+prediction_col2.metric(
+    "Predicted Status",
+    selected_row["prediction"]
+)
+
+prediction_col3.metric(
+    "Alert Status",
+    selected_row["alert"]
+)
+
+if probability >= PROBABILITY_THRESHOLD:
+    st.warning(
+        f"Rain alert: {selected_location} has a predicted rainfall "
+        f"probability of {probability * 100:.2f}%."
+    )
+else:
+    st.success(
+        f"No rain alert: the predicted rainfall probability is "
+        f"{probability * 100:.2f}%, below the 30% threshold."
     )
 
-# -------------------- FORECAST CHART --------------------
-st.subheader("📊 Three-Day Rainfall Forecast")
 
-fig_forecast = px.bar(
-    location_forecast,
-    x="forecast_date",
-    y="predicted_rainfall_mm",
-    text="predicted_rainfall_mm",
-    labels={
-        "forecast_date": "Forecast Date",
-        "predicted_rainfall_mm": "Predicted Rainfall (mm)"
-    },
-    title=f"Predicted Rainfall — {selected_location}"
+# =========================================================
+# PROBABILITY GAUGE
+# =========================================================
+
+st.subheader("📊 Rainfall Probability")
+
+gauge = go.Figure(
+    go.Indicator(
+        mode="gauge+number",
+        value=probability * 100,
+        number={"suffix": "%"},
+        title={"text": f"Rain Probability — {selected_location}"},
+        gauge={
+            "axis": {"range": [0, 100]},
+            "bar": {"color": "#2878B5"},
+            "steps": [
+                {"range": [0, 10], "color": "#D9EAD3"},
+                {"range": [10, 20], "color": "#FFF2CC"},
+                {"range": [20, 30], "color": "#FCE5CD"},
+                {"range": [30, 100], "color": "#F4CCCC"},
+            ],
+            "threshold": {
+                "line": {"color": "red", "width": 4},
+                "thickness": 0.75,
+                "value": 30,
+            },
+        },
+    )
 )
 
-fig_forecast.update_traces(
-    texttemplate="%{text:.2f} mm",
-    textposition="outside"
+gauge.update_layout(
+    height=300,
+    margin=dict(t=60, b=20, l=30, r=30)
 )
 
-fig_forecast.update_layout(
-    showlegend=False,
-    xaxis_title="Date",
-    yaxis_title="Rainfall (mm)"
-)
+st.plotly_chart(gauge, width="stretch")
 
-st.plotly_chart(fig_forecast, width="stretch")
 
-# -------------------- HISTORICAL CHART --------------------
+# =========================================================
+# HISTORICAL RAINFALL CHART
+# =========================================================
+
+st.divider()
 st.subheader("📈 Historical Rainfall")
 
 history_period = st.selectbox(
     "Historical chart period",
-    ["Last 30 days", "Last 90 days", "Last 365 days", "All data"]
+    [
+        "Last 30 days",
+        "Last 90 days",
+        "Last 365 days",
+        "All data"
+    ]
 )
 
 if history_period == "Last 30 days":
     history_chart = location_history.tail(30)
+
 elif history_period == "Last 90 days":
     history_chart = location_history.tail(90)
+
 elif history_period == "Last 365 days":
     history_chart = location_history.tail(365)
+
 else:
     history_chart = location_history
 
@@ -169,7 +315,7 @@ fig_history = px.line(
     y="rainfall_mm",
     labels={
         "date": "Date",
-        "rainfall_mm": "Rainfall (mm)"
+        "rainfall_mm": "Observed Rainfall (mm)"
     },
     title=f"Historical Rainfall — {selected_location}"
 )
@@ -181,68 +327,34 @@ fig_history.update_layout(
 
 st.plotly_chart(fig_history, width="stretch")
 
-# -------------------- FORECAST TABLE --------------------
-st.subheader("📋 Forecast Data")
 
-display_forecast = location_forecast[
-    ["forecast_date", "forecast_day", "predicted_rainfall_mm"]
-].copy()
+# =========================================================
+# PAKISTAN RAINFALL PROBABILITY MAP
+# =========================================================
 
-display_forecast["forecast_date"] = (
-    display_forecast["forecast_date"].dt.strftime("%Y-%m-%d")
-)
-
-display_forecast["predicted_rainfall_mm"] = (
-    display_forecast["predicted_rainfall_mm"].clip(lower=0).round(2)
-)
-
-display_forecast.columns = [
-    "Date",
-    "Forecast Day",
-    "Predicted Rainfall (mm)"
-]
-
-st.dataframe(
-    display_forecast,
-    width="stretch",
-    hide_index=True
-)
-
-# -------------------- PAKISTAN MAP --------------------
 st.divider()
-st.subheader("Pakistan Rainfall Forecast Map")
+st.subheader("🇵🇰 Pakistan Rainfall Probability Map")
 
-map_day = st.selectbox(
-    "Select forecast day for map",
-    ["1", "2", "3"],
-    format_func=lambda x: f"Day {x}"
-)
-
-map_data = forecast.copy()
-
-map_data["predicted_rainfall_mm"] = (
-    map_data["predicted_rainfall_mm"].clip(lower=0)
-)
-
-map_data["forecast_day"] = map_data["forecast_day"].astype(str)
-
-map_data = map_data[
-    map_data["forecast_day"] == map_day
-].copy()
+map_data = filtered_forecast.copy()
 
 map_data["latitude"] = pd.to_numeric(
-    map_data["latitude"], errors="coerce"
+    map_data["latitude"],
+    errors="coerce"
 )
 
 map_data["longitude"] = pd.to_numeric(
-    map_data["longitude"], errors="coerce"
+    map_data["longitude"],
+    errors="coerce"
 )
 
 map_data = map_data.dropna(
-    subset=["latitude", "longitude", "predicted_rainfall_mm"]
+    subset=[
+        "latitude",
+        "longitude",
+        "rain_probability"
+    ]
 )
 
-# Create a real interactive Leaflet map
 pakistan_map = folium.Map(
     location=[30.3753, 69.3451],
     zoom_start=5,
@@ -251,56 +363,82 @@ pakistan_map = folium.Map(
 )
 
 marker_cluster = MarkerCluster(
-    name="Rainfall Forecast Locations",
+    name="Rainfall Probability Locations",
     show=True
 ).add_to(pakistan_map)
 
-def rainfall_color(rainfall):
-    if rainfall < 1:
-        return "green"
-    elif rainfall < 2:
-        return "yellow"
-    elif rainfall < 5:
-        return "orange"
-    else:
-        return "red"
 
-# Add rainfall markers for all dataset locations
+def probability_color(probability):
+
+    if probability < 0.10:
+        return "green"
+
+    elif probability < 0.20:
+        return "yellow"
+
+    elif probability < PROBABILITY_THRESHOLD:
+        return "orange"
+
+    return "red"
+
+
 for row in map_data.itertuples():
-    rainfall = max(0, float(row.predicted_rainfall_mm))
-    color = rainfall_color(rainfall)
+
+    probability = float(row.rain_probability)
+
+    color = probability_color(probability)
 
     popup_html = f"""
-    <div style="font-family:Arial; width:190px;">
+    <div style="font-family:Arial; width:210px;">
         <h4 style="margin-bottom:8px;">{row.location}</h4>
         <b>Province:</b> {row.province}<br>
-        <b>Forecast Day:</b> {row.forecast_day}<br>
-        <b>Forecast Date:</b> {row.forecast_date.strftime('%d %B %Y')}<br>
-        <b>Predicted Rainfall:</b> {rainfall:.2f} mm
+        <b>Prediction Date:</b> {row.forecast_date:%d %B %Y}<br>
+        <b>Rain Probability:</b> {probability * 100:.2f}%<br>
+        <b>Prediction:</b> {row.prediction}<br>
+        <b>Alert:</b> {row.alert}<br>
+        <b>Last Observation:</b> {row.last_observed_date:%d %B %Y}
     </div>
     """
 
     folium.CircleMarker(
         location=[row.latitude, row.longitude],
-        radius=7 + min(rainfall, 10) * 1.2,
+        radius=8 + probability * 12,
         color=color,
         weight=2,
         fill=True,
         fill_color=color,
         fill_opacity=0.75,
-        tooltip=f"{row.location}: {rainfall:.2f} mm",
-        popup=folium.Popup(popup_html, max_width=250)
+        tooltip=(
+            f"{row.location}: "
+            f"{probability * 100:.2f}% rain probability"
+        ),
+        popup=folium.Popup(
+            popup_html,
+            max_width=270
+        )
     ).add_to(marker_cluster)
 
-# Fit the map around all plotted locations
-if not map_data.empty:
-    bounds = [
-        [map_data["latitude"].min(), map_data["longitude"].min()],
-        [map_data["latitude"].max(), map_data["longitude"].max()]
-    ]
-    pakistan_map.fit_bounds(bounds, padding=[35, 35])
 
-# Add rainfall legend
+if not map_data.empty:
+
+    bounds = [
+        [
+            map_data["latitude"].min(),
+            map_data["longitude"].min()
+        ],
+        [
+            map_data["latitude"].max(),
+            map_data["longitude"].max()
+        ]
+    ]
+
+    pakistan_map.fit_bounds(
+        bounds,
+        padding=[35, 35]
+    )
+
+
+# Map legend
 legend_html = """
 <div style="
     position: fixed;
@@ -315,11 +453,15 @@ legend_html = """
     box-shadow: 0 1px 5px rgba(0,0,0,0.3);
     color: #222;
 ">
-    <b>Predicted Rainfall</b><br>
-    <span style="display:inline-block;width:10px;height:10px;background:green;border-radius:50%;margin-right:7px;"></span>Low: Below 1 mm<br>
-    <span style="display:inline-block;width:10px;height:10px;background:#d6b900;border-radius:50%;margin-right:7px;"></span>Moderate: 1?2 mm<br>
-    <span style="display:inline-block;width:10px;height:10px;background:orange;border-radius:50%;margin-right:7px;"></span>High: 2?5 mm<br>
-    <span style="display:inline-block;width:10px;height:10px;background:red;border-radius:50%;margin-right:7px;"></span>Very High: 5 mm or more
+    <b>Rain Probability</b><br>
+    <span style="display:inline-block;width:10px;height:10px;background:green;border-radius:50%;margin-right:7px;"></span>
+    Low: Below 10%<br>
+    <span style="display:inline-block;width:10px;height:10px;background:#d6b900;border-radius:50%;margin-right:7px;"></span>
+    Moderate: 10–20%<br>
+    <span style="display:inline-block;width:10px;height:10px;background:orange;border-radius:50%;margin-right:7px;"></span>
+    Elevated: 20–30%<br>
+    <span style="display:inline-block;width:10px;height:10px;background:red;border-radius:50%;margin-right:7px;"></span>
+    Rain Alert: 30% or more
 </div>
 """
 
@@ -328,8 +470,8 @@ pakistan_map.get_root().html.add_child(
 )
 
 st.caption(
-    f"Showing {len(map_data)} forecast locations for Day {map_day}. "
-    "Click a marker to view its rainfall prediction."
+    f"Showing {len(map_data)} locations. "
+    "Click a marker to view its rainfall probability and prediction status."
 )
 
 st_folium(
@@ -340,75 +482,138 @@ st_folium(
     returned_objects=[]
 )
 
-# -------------------- ALL LOCATIONS TABLE --------------------
-st.subheader("🌧️ All Locations — Three-Day Forecast")
 
-all_forecasts = forecast.copy()
+# =========================================================
+# ALL LOCATIONS PREDICTION TABLE
+# =========================================================
 
-all_forecasts["predicted_rainfall_mm"] = (
-    all_forecasts["predicted_rainfall_mm"].clip(lower=0).round(2)
+st.divider()
+st.subheader("🌧️ All Locations — Next-Day Predictions")
+
+display_forecast = filtered_forecast[
+    [
+        "location",
+        "province",
+        "forecast_date",
+        "probability_percent",
+        "prediction",
+        "alert",
+    ]
+].copy()
+
+display_forecast["forecast_date"] = (
+    display_forecast["forecast_date"].dt.strftime("%Y-%m-%d")
 )
 
-all_forecasts["forecast_date"] = (
-    all_forecasts["forecast_date"].dt.strftime("%Y-%m-%d")
+display_forecast.columns = [
+    "Location",
+    "Province",
+    "Prediction Date",
+    "Rain Probability (%)",
+    "Prediction",
+    "Alert Status",
+]
+
+display_forecast = display_forecast.sort_values(
+    "Rain Probability (%)",
+    ascending=False
 )
 
 st.dataframe(
-    all_forecasts[
-        [
-            "location",
-            "province",
-            "forecast_date",
-            "forecast_day",
-            "predicted_rainfall_mm"
-        ]
-    ].rename(columns={
-        "location": "Location",
-        "province": "Province",
-        "forecast_date": "Forecast Date",
-        "forecast_day": "Forecast Day",
-        "predicted_rainfall_mm": "Predicted Rainfall (mm)"
-    }),
+    display_forecast,
     width="stretch",
     hide_index=True
 )
 
-# -------------------- MODEL PERFORMANCE --------------------
+
+# =========================================================
+# MODEL PERFORMANCE
+# =========================================================
+
 st.divider()
 st.subheader("🤖 Model Performance")
 
-st.caption(
-    "Evaluation results on the time-based testing dataset. "
-    "These metrics represent the current model's performance, "
-    "not guaranteed future accuracy."
+st.markdown(
+    """
+    The model was evaluated using a chronological test dataset:
+    training target dates through 2022 and testing observations from 2023 onward.
+    """
 )
 
+metrics = evaluation.iloc[0]
+
+metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+
+metric_col1.metric(
+    "Precision",
+    f"{metrics['Precision']:.4f}"
+)
+
+metric_col2.metric(
+    "Recall",
+    f"{metrics['Recall']:.4f}"
+)
+
+metric_col3.metric(
+    "F1 Score",
+    f"{metrics['F1']:.4f}"
+)
+
+metric_col4.metric(
+    "PR-AUC",
+    f"{metrics['PR_AUC']:.4f}"
+)
+
+performance_columns = [
+    "Accuracy",
+    "Balanced_Accuracy",
+    "ROC_AUC",
+    "PR_AUC",
+    "Brier_Score",
+    "Log_Loss",
+    "Precision",
+    "Recall",
+    "F1",
+]
+
+performance_table = evaluation[
+    performance_columns
+].T.reset_index()
+
+performance_table.columns = [
+    "Evaluation Metric",
+    "Value"
+]
+
+performance_table["Value"] = performance_table["Value"].round(4)
+
 st.dataframe(
-    evaluation.round(4),
+    performance_table,
     width="stretch",
     hide_index=True
 )
 
-fig_metrics = px.bar(
-    evaluation,
-    x="forecast_day",
-    y="MAE_mm",
-    labels={
-        "forecast_day": "Forecast Day",
-        "MAE_mm": "Mean Absolute Error (mm)"
-    },
-    title="Model MAE by Forecast Day"
+st.caption(
+    "The evaluation metrics describe historical held-out test performance. "
+    "They do not guarantee future prediction accuracy."
 )
 
-st.plotly_chart(fig_metrics, width="stretch")
+st.caption(
+    "The classifier predicts rainfall occurrence (at least 1 mm), "
+    "not rainfall amount, flood occurrence, or flood severity."
+)
 
-# -------------------- FOOTER --------------------
+
+# =========================================================
+# FOOTER
+# =========================================================
+
 st.divider()
 
 st.caption(
     "Pakistan Rainfall Prediction System | "
-    "Machine Learning Semester Project | "
+    "XGBoost Machine Learning | "
     "Historical Dataset: 1981–2026 | "
-    "Forecast Horizon: 3 Days"
+    "Prediction Horizon: Next Day | "
+    "Offline Dataset-Based System"
 )
-

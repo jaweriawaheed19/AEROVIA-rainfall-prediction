@@ -1,0 +1,23 @@
+location,province,latitude,longitude,last_observed_date,forecast_date,rain_probability,probability_percent,predicted_rain,prediction,alert
+Badin,Sindh,24.6556,68.8386,2026-06-30,2026-07-01,0.09,9.0,0,No Rain Expected,No Alert
+Bahawalpur,Punjab,29.3956,71.6836,2026-06-30,2026-07-01,0.0718,7.18,0,No Rain Expected,No Alert
+Charsadda,Khyber Pakhtunkhwa,34.1482,71.7406,2026-06-30,2026-07-01,0.1755,17.55,0,No Rain Expected,No Alert
+Dadu,Sindh,26.7303,67.7769,2026-06-30,2026-07-01,0.14,14.0,0,No Rain Expected,No Alert
+Dera_Ismail_Khan,Khyber Pakhtunkhwa,31.8327,70.9024,2026-06-30,2026-07-01,0.1051,10.51,0,No Rain Expected,No Alert
+Jacobabad,Sindh,28.2819,68.4382,2026-06-30,2026-07-01,0.1548,15.48,0,No Rain Expected,No Alert
+Jaffarabad,Balochistan,28.24,68.36,2026-06-30,2026-07-01,0.1367,13.67,0,No Rain Expected,No Alert
+Jalalpur_Pirwala,Punjab,29.5051,71.219,2026-06-30,2026-07-01,0.0675,6.75,0,No Rain Expected,No Alert
+Jhal_Magsi,Balochistan,28.3642,67.5455,2026-06-30,2026-07-01,0.1803,18.03,0,No Rain Expected,No Alert
+Kasur,Punjab,31.1187,74.45,2026-06-30,2026-07-01,0.3486,34.86,1,Rain Expected,Rain Alert
+Larkana,Sindh,27.5609,68.2264,2026-06-30,2026-07-01,0.0813,8.13,0,No Rain Expected,No Alert
+Mingora_Swat,Khyber Pakhtunkhwa,34.7717,72.36,2026-06-30,2026-07-01,0.3143,31.43,1,Rain Expected,Rain Alert
+Multan,Punjab,30.1575,71.5249,2026-06-30,2026-07-01,0.061,6.1,0,No Rain Expected,No Alert
+Nasirabad,Balochistan,28.8173,68.8995,2026-06-30,2026-07-01,0.1889,18.89,0,No Rain Expected,No Alert
+Nowshera,Khyber Pakhtunkhwa,34.015,71.9747,2026-06-30,2026-07-01,0.1998,19.98,0,No Rain Expected,No Alert
+Qambar_Shahdadkot,Sindh,27.5911,68.0083,2026-06-30,2026-07-01,0.0781,7.81,0,No Rain Expected,No Alert
+Shujaabad,Punjab,29.8809,71.2934,2026-06-30,2026-07-01,0.061,6.1,0,No Rain Expected,No Alert
+Sialkot,Punjab,32.4945,74.5229,2026-06-30,2026-07-01,0.4697,46.97,1,Rain Expected,Rain Alert
+Sohbatpur,Balochistan,28.5204,68.5423,2026-06-30,2026-07-01,0.1607,16.07,0,No Rain Expected,No Alert
+Sukkur,Sindh,27.7052,68.8574,2026-06-30,2026-07-01,0.0411,4.11,0,No Rain Expected,No Alert
+Tank,Khyber Pakhtunkhwa,32.2171,70.3832,2026-06-30,2026-07-01,0.1053,10.53,0,No Rain Expected,No Alert
+Thatta,Sindh,24.7475,67.9235,2026-06-30,2026-07-01,0.1227,12.27,0,No Rain Expected,No Alert
