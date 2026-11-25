@@ -1,4 +1,7 @@
-﻿import pandas as pd
+﻿import sys
+from pathlib import Path
+
+import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -7,6 +10,10 @@ from sklearn.metrics import (
     balanced_accuracy_score,
     mean_absolute_error
 )
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from historical_simulation import run_historical_simulation
 
@@ -132,3 +139,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
