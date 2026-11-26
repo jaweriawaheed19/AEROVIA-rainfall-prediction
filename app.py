@@ -159,7 +159,7 @@ except Exception as error:
 # HEADER
 # =========================================================
 
-st.title("🌧️ Pakistan Rainfall Prediction System")
+st.title("Pakistan Rainfall Prediction System")
 
 st.markdown(
     "### Machine Learning Based Next-Day Rainfall Prediction"
@@ -297,7 +297,7 @@ st.divider()
 # SELECTED LOCATION PREDICTION
 # =========================================================
 
-st.subheader(f"📍 Next-Day Prediction: {selected_location}")
+st.subheader(f"Next-Day Prediction: {selected_location}")
 
 selected_row = location_forecast.iloc[0]
 
@@ -359,7 +359,7 @@ else:
 # PROBABILITY GAUGE
 # =========================================================
 
-st.subheader("📊 Rainfall Probability")
+st.subheader("Rainfall Probability")
 
 gauge = go.Figure(
     go.Indicator(
@@ -398,7 +398,7 @@ st.plotly_chart(gauge, width="stretch")
 # =========================================================
 
 st.divider()
-st.subheader("📈 Historical Rainfall")
+st.subheader("Historical Rainfall")
 
 history_period = st.selectbox(
     "Historical chart period",
@@ -602,7 +602,7 @@ st_folium(
 # =========================================================
 
 st.divider()
-st.subheader("🌧️ All Locations — Next-Day Predictions")
+st.subheader("All Locations — Next-Day Predictions")
 
 display_forecast = filtered_forecast[
     [
@@ -652,7 +652,7 @@ st.dataframe(
 # =========================================================
 
 st.divider()
-st.subheader("🧪 Historical Prediction Simulation")
+st.subheader("Historical Prediction Simulation")
 
 st.markdown(
     """
@@ -843,7 +843,7 @@ else:
 # =========================================================
 
 st.divider()
-st.subheader("🤖 Model Performance")
+st.subheader("Model Performance")
 
 st.markdown(
     """
