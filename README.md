@@ -22,6 +22,16 @@
 
 ---
 
+## Team Members
+
+| Name | Roll Number |
+|---|---|
+| Amna Aamir | 01-134242-022 |
+| Jaweria Waheed | 01-134242-054 |
+
+---
+
+
 ## Project Overview
 
 **AEROVIA**, the Pakistan Rainfall Prediction System, is a machine learning academic project that predicts next-day rainfall for **22 selected locations across Pakistan**.
