@@ -274,6 +274,24 @@ AEROVIA-rainfall-prediction/
 
 ---
 
+## File Descriptions
+
+| File | Purpose |
+|---|---|
+| app.py | Runs the Streamlit dashboard and displays rainfall predictions |
+| historical_simulation.py | Performs historical prediction simulations |
+| train_occurrence.py | Trains the rainfall occurrence classification model |
+| train_amount.py | Trains the rainfall amount regression model |
+| requirements.txt | Lists the Python libraries required by the project |
+| README.md | Contains project information and setup instructions |
+| data/rainfall.csv | Contains historical rainfall and weather observations |
+| models/rain_occurrence_xgb.pkl | Saved rainfall occurrence model |
+| models/rain_amount_xgb.pkl | Saved rainfall amount model |
+| reports/ | Contains model evaluation and prediction results |
+| validation/ | Contains historical backtesting scripts |
+
+---
+
 ## Installation and Setup
 
 ### 1. Clone the repository
